@@ -6,6 +6,7 @@ import MyFiles from './MyFiles';
 import Analytics from './Analytics';
 import EnhancedStats from './EnhancedStats';
 import AICMFeatures from './AICMFeatures';
+import AICMFooter from './AICMFooter';
 import { Background3D } from './3D';
 import { useAICMAnimations } from './3D/useAICMAnimations';
 import './HomePage3D.css';
@@ -190,6 +191,9 @@ const HomePage3D = () => {
 
         {/* Features Section */}
         <AICMFeatures stats={stats} />
+
+        {/* Footer Section */}
+        <AICMFooter onGetStarted={() => setShowLanding(false)} />
       </Background3D>
       </div>
     );
