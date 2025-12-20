@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Settings from './Settings';
 import QuickActions from './QuickActions';
 import AdvancedSearch from './AdvancedSearch';
 import MyFiles from './MyFiles';
 import Analytics from './Analytics';
 import EnhancedStats from './EnhancedStats';
+import { Background3D } from './3D';
 import './HomePage3D.css';
 
 const HomePage3D = () => {
@@ -190,8 +191,11 @@ const HomePage3D = () => {
 
   return (
     <div className="homepage-3d-container">
-      {/* Sidebar */}
-      <aside className="sidebar">
+      {/* 3D Background */}
+      <Suspense fallback={null}>
+        <Background3D cameraZ={20} intensity={0.8}>
+          {/* Sidebar - positioned absolutely over 3D */}
+          <aside className="sidebar">
         <div className="sidebar-logo">
           <div className="logo-icon">☁️</div>
           <h2>Cloud File &<br />Notes</h2>
@@ -371,6 +375,8 @@ const HomePage3D = () => {
           {activeMenu === 'settings' && <Settings />}
         </div>
       </main>
+        </Background3D>
+      </Suspense>
     </div>
   );
 };

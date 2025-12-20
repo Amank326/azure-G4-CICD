@@ -1,0 +1,182 @@
+/* ==================== SEARCH PAGE 3D CONTAINER ==================== */
+
+.search-page-3d {
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0e27 0%, #1a1a3e 50%, #0f1f3f 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #ffffff;
+}
+
+/* ==================== SEARCH PAGE CONTENT ==================== */
+
+.search-page-content {
+  padding: 60px 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 5;
+}
+
+/* ==================== SEARCH HEADER ==================== */
+
+.search-header {
+  text-align: center;
+  margin-bottom: 60px;
+  animation: slideInDown 0.6s ease;
+}
+
+.search-title {
+  font-size: 3rem;
+  font-weight: 800;
+  margin: 0 0 15px;
+  background: linear-gradient(135deg, #00d4ff, #00ff88);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.search-subtitle {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+/* ==================== SEARCH TABS ==================== */
+
+.search-tabs {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 40px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  padding: 12px 25px;
+  background: rgba(102, 126, 234, 0.15);
+  border: 2px solid rgba(102, 126, 234, 0.3);
+  color: #00d4ff;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  background: rgba(102, 126, 234, 0.25);
+  border-color: rgba(102, 126, 234, 0.5);
+  transform: translateY(-2px);
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-color: #667eea;
+  color: #ffffff;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+/* ==================== SEARCH CONTENT AREA ==================== */
+
+.search-content-area {
+  animation: fadeIn 0.5s ease;
+}
+
+/* ==================== FILTERS SECTION ==================== */
+
+.filters-section h2,
+.categories-section h2 {
+  font-size: 1.8rem;
+  margin-bottom: 30px;
+  color: #00d4ff;
+}
+
+.filters-grid,
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.filter-box,
+.category-card {
+  background: rgba(102, 126, 234, 0.1);
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  padding: 25px;
+  border-radius: 15px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.filter-box:hover,
+.category-card:hover {
+  background: rgba(102, 126, 234, 0.2);
+  border-color: rgba(102, 126, 234, 0.4);
+  transform: translateY(-8px);
+  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
+}
+
+.filter-box h3,
+.category-card h3 {
+  font-size: 1.2rem;
+  margin: 0 0 8px;
+  color: #00ff88;
+}
+
+.filter-box p,
+.category-card p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.95rem;
+}
+
+.category-icon {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  display: block;
+}
+
+/* ==================== ANIMATIONS ==================== */
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+  .search-page-content {
+    padding: 40px 20px;
+  }
+
+  .search-title {
+    font-size: 2rem;
+  }
+
+  .search-subtitle {
+    font-size: 1rem;
+  }
+
+  .filters-grid,
+  .categories-grid {
+    grid-template-columns: 1fr;
+  }
+}

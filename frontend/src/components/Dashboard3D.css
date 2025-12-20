@@ -1,0 +1,88 @@
+/* ==================== DASHBOARD 3D WRAPPER ==================== */
+
+.dashboard-3d-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0e27 0%, #1a1a3e 50%, #0f1f3f 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #ffffff;
+  overflow-x: hidden;
+}
+
+/* ==================== DASHBOARD 3D CONTENT ==================== */
+
+.dashboard-3d-content {
+  padding: 60px 40px;
+  max-width: 1600px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 5;
+}
+
+/* ==================== DASHBOARD HEADER 3D ==================== */
+
+.dashboard-header-3d {
+  text-align: center;
+  margin-bottom: 50px;
+  animation: slideInDown 0.6s ease;
+}
+
+.dashboard-title-3d {
+  font-size: 2.8rem;
+  font-weight: 800;
+  margin: 0 0 12px;
+  background: linear-gradient(135deg, #ff0080, #00d4ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dashboard-subtitle-3d {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+/* ==================== DASHBOARD BODY 3D ==================== */
+
+.dashboard-body-3d {
+  animation: fadeIn 0.5s ease 0.2s both;
+}
+
+/* ==================== ANIMATIONS ==================== */
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+  .dashboard-3d-content {
+    padding: 40px 20px;
+  }
+
+  .dashboard-title-3d {
+    font-size: 2rem;
+  }
+
+  .dashboard-subtitle-3d {
+    font-size: 0.95rem;
+  }
+}
