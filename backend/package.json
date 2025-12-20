@@ -4,8 +4,9 @@
   "description": "Backend for Cloud File & Notes Management System",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "start": "node src/index-local.js",
+    "dev": "nodemon src/index.js",
+    "start:azure": "node src/index.js"
   },
   "dependencies": {
     "@azure/cosmos": "^3.1.0",

@@ -25,10 +25,11 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/', async (req, res) => {
     try {
         const { resources: items } = await container.items.readAll().fetchAll();
-        res.json(items);
+        console.log('Files fetched:', items.length);
+        res.json(Array.isArray(items) ? items : []);
     } catch (error) {
         console.error('Error fetching files:', error);
-        res.status(500).json({ error: 'Failed to fetch files' });
+        res.status(500).json({ error: 'Failed to fetch files', details: error.message });
     }
 });
 
@@ -108,12 +109,16 @@ router.put('/:fileId', async (req, res) => {
         const { fileId } = req.params;
         const { notes } = req.body;
 
-        const { resource: item } = await container.item(fileId, fileId).read();
-        
-        if (!item) {
+        // Query to get the item first
+        const { resources: items } = await container.items
+            .query(`SELECT * FROM c WHERE c.id = @fileId`, { parameters: [{ name: '@fileId', value: fileId }] })
+            .fetchAll();
+
+        if (items.length === 0) {
             return res.status(404).json({ error: 'File not found' });
         }
 
+        const item = items[0];
         item.notes = notes || item.notes;
         item.updatedAt = new Date().toISOString();
 
@@ -122,7 +127,7 @@ router.put('/:fileId', async (req, res) => {
         res.json(updatedItem);
     } catch (error) {
         console.error('Error updating file:', error);
-        res.status(500).json({ error: 'Failed to update file' });
+        res.status(500).json({ error: 'Failed to update file', details: error.message });
     }
 });
 
@@ -131,17 +136,31 @@ router.delete('/:fileId', async (req, res) => {
     try {
         const { fileId } = req.params;
 
+        // First verify file exists in Cosmos
+        const { resources: items } = await container.items
+            .query(`SELECT * FROM c WHERE c.id = @fileId`, { parameters: [{ name: '@fileId', value: fileId }] })
+            .fetchAll();
+
+        if (items.length === 0) {
+            return res.status(404).json({ error: 'File not found' });
+        }
+
         // Delete from blob storage
         const blockBlobClient = containerClient.getBlockBlobClient(fileId);
-        await blockBlobClient.delete();
+        try {
+            await blockBlobClient.delete();
+        } catch (blobError) {
+            console.warn('Warning deleting blob:', blobError.message);
+        }
 
         // Delete from Cosmos DB
+        const item = items[0];
         await container.item(fileId, fileId).delete();
 
         res.json({ message: 'File deleted successfully' });
     } catch (error) {
         console.error('Error deleting file:', error);
-        res.status(500).json({ error: 'Failed to delete file' });
+        res.status(500).json({ error: 'Failed to delete file', details: error.message });
     }
 });
 

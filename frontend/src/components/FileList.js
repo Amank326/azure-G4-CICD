@@ -111,19 +111,6 @@ const FileList = ({ files, onFileDelete, onFileUpdate }) => {
                 setLoading(false);
             }
         }
-    };                if (!response.ok) {
-                    throw new Error('Failed to delete file');
-                }
-
-                if (onFileDelete) {
-                    onFileDelete(fileId);
-                }
-            } catch (err) {
-                setError(err.message || 'Failed to delete file');
-            } finally {
-                setLoading(false);
-            }
-        }
     };
 
     return (
@@ -244,57 +231,6 @@ const FileList = ({ files, onFileDelete, onFileUpdate }) => {
             </div>
         </div>
     );
-};
-
-export default FileList;
-                            </div>
-                            <div className="mt-2">
-                                <button
-                                    className="btn btn-sm btn-primary"
-                                    onClick={() => handleDownload(file.id, file.name)}
-                                    disabled={loading}
-                                >
-                                    Download
-                                </button>
-                                <button
-                                    className="btn btn-sm btn-info ms-2"
-                                    onClick={() => handleEdit(file)}
-                                    disabled={loading || editingId === file.id}
-                                >
-                                    Edit Notes
-                                </button>
-                                <button
-                                    className="btn btn-sm btn-danger ms-2"
-                                    onClick={() => handleDelete(file.id)}
-                                    disabled={loading}
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-};
-
-const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
 };
 
 export default FileList;

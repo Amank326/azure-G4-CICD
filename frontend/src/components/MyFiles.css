@@ -1,0 +1,219 @@
+/* ==================== MY FILES ==================== */
+
+.my-files {
+  animation: slideInUp 0.6s ease-out;
+}
+
+.my-files-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.sort-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.sort-container label {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.sort-container select {
+  background: transparent;
+  border: none;
+  color: #00d4ff;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.sort-container select option {
+  background: #1a1a3e;
+  color: #ffffff;
+}
+
+.files-subheading {
+  color: #ffffff;
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  margin-top: 0;
+  font-weight: 600;
+}
+
+.files-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.file-card {
+  background: #ffffff;
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideInUp 0.5s ease-out both;
+}
+
+.file-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 50px rgba(102, 126, 234, 0.2);
+}
+
+.file-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.file-type-icon {
+  font-size: 2rem;
+}
+
+.file-title {
+  color: #333;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  word-break: break-word;
+  flex: 1;
+}
+
+.file-size {
+  color: #999;
+  font-size: 0.85rem;
+  margin: 0 0 15px 0;
+}
+
+.file-notes {
+  background: #f5f5f5;
+  border-left: 3px solid #667eea;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+}
+
+.notes-icon {
+  font-size: 1rem;
+  margin-right: 5px;
+}
+
+.notes-label {
+  color: #667eea;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.notes-text {
+  color: #555;
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.file-date {
+  color: #999;
+  font-size: 0.85rem;
+  margin: 0 0 15px 0;
+}
+
+.file-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  flex: 1;
+  min-width: 80px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.btn-download {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: 2px solid transparent;
+}
+
+.btn-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-edit {
+  background: transparent;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.btn-edit:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.btn-delete {
+  background: transparent;
+  color: #ff6b6b;
+  border: 2px solid #ff6b6b;
+}
+
+.btn-delete:hover {
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.no-files {
+  text-align: center;
+  padding: 60px 20px;
+  background: rgba(102, 126, 234, 0.08);
+  border: 2px dashed rgba(102, 126, 234, 0.3);
+  border-radius: 15px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 1024px) {
+  .files-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .my-files-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sort-container {
+    width: 100%;
+  }
+
+  .files-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .file-actions {
+    flex-direction: column;
+  }
+
+  .btn {
+    min-width: auto;
+  }
+}
