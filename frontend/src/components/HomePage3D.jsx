@@ -193,7 +193,7 @@ const HomePage3D = () => {
     <div className="homepage-3d-container">
       {/* 3D Background */}
       <Suspense fallback={null}>
-        <Background3D cameraZ={20} intensity={0.8}>
+        <Background3D cameraZ={28} intensity={0.9}>
           {/* Sidebar - positioned absolutely over 3D */}
           <aside className="sidebar">
         <div className="sidebar-logo">

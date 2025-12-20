@@ -1,10 +1,9 @@
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Stars, PerspectiveCamera, OrbitControls } from '@react-three/drei';
+import { PerspectiveCamera, OrbitControls } from '@react-three/drei';
 import FloatingObjects from './FloatingObjects';
-import ParticleEffect from './ParticleEffect';
 
-const Scene3D = ({ enableOrbit = false, enableStars = true, cameraPosition = [0, 0, 15], scale = 1 }) => {
+const Scene3D = ({ enableOrbit = false, cameraPosition = [0, 0, 25], scale = 1 }) => {
   return (
     <Canvas
       style={{
@@ -20,31 +19,27 @@ const Scene3D = ({ enableOrbit = false, enableStars = true, cameraPosition = [0,
       <PerspectiveCamera
         makeDefault
         position={[cameraPosition[0], cameraPosition[1], cameraPosition[2]]}
-        fov={75}
+        fov={50}
         near={0.1}
         far={1000}
       />
 
-      {/* Lighting */}
-      <ambientLight intensity={0.6} />
-      <pointLight position={[10, 10, 10]} intensity={0.8} />
-      <pointLight position={[-10, -10, -10]} intensity={0.4} color="#ff00ff" />
-      <pointLight position={[10, -10, 10]} intensity={0.4} color="#00ffff" />
-
-      {/* Stars Background */}
-      {enableStars && <Stars radius={100} depth={50} count={5000} factor={4} />}
+      {/* Lighting - Soft & Professional */}
+      <ambientLight intensity={0.4} />
+      <pointLight position={[15, 15, 15]} intensity={0.6} />
+      <pointLight position={[-15, 10, 5]} intensity={0.3} color="#667eea" />
+      <pointLight position={[0, -15, 10]} intensity={0.2} color="#764ba2" />
 
       {/* 3D Objects */}
       <Suspense fallback={null}>
         <FloatingObjects scale={scale} />
-        <ParticleEffect count={300} />
       </Suspense>
 
       {/* Orbit Controls - Optional */}
-      {enableOrbit && <OrbitControls autoRotate autoRotateSpeed={2} />}
+      {enableOrbit && <OrbitControls autoRotate autoRotateSpeed={0.5} />}
 
-      {/* Fog for depth */}
-      <fog attach="fog" args={['#000000', 5, 50]} />
+      {/* Subtle Fog */}
+      <fog attach="fog" args={['#0a0e27', 10, 100]} />
     </Canvas>
   );
 };
