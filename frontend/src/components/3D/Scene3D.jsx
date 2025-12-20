@@ -3,7 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { PerspectiveCamera, OrbitControls } from '@react-three/drei';
 import FloatingObjects from './FloatingObjects';
 
-const Scene3D = ({ enableOrbit = false, cameraPosition = [0, 0, 25], scale = 1 }) => {
+const Scene3D = ({ enableOrbit = false, cameraPosition = [0, 0, 20], scale = 1 }) => {
   return (
     <Canvas
       style={{
@@ -24,11 +24,14 @@ const Scene3D = ({ enableOrbit = false, cameraPosition = [0, 0, 25], scale = 1 }
         far={1000}
       />
 
-      {/* Lighting - Soft & Professional */}
-      <ambientLight intensity={0.4} />
-      <pointLight position={[15, 15, 15]} intensity={0.6} />
-      <pointLight position={[-15, 10, 5]} intensity={0.3} color="#667eea" />
-      <pointLight position={[0, -15, 10]} intensity={0.2} color="#764ba2" />
+      {/* AICM-Inspired Lighting - Vibrant & Dynamic */}
+      <ambientLight intensity={0.5} />
+      <pointLight position={[20, 15, 10]} intensity={0.8} color="#667eea" />
+      <pointLight position={[-20, 10, 5]} intensity={0.5} color="#00d4ff" />
+      <pointLight position={[0, -20, 15]} intensity={0.6} color="#ff0080" />
+      
+      {/* Additional accent lights */}
+      <pointLight position={[15, -10, -10]} intensity={0.3} color="#00ff88" />
 
       {/* 3D Objects */}
       <Suspense fallback={null}>
@@ -36,7 +39,7 @@ const Scene3D = ({ enableOrbit = false, cameraPosition = [0, 0, 25], scale = 1 }
       </Suspense>
 
       {/* Orbit Controls - Optional */}
-      {enableOrbit && <OrbitControls autoRotate autoRotateSpeed={0.5} />}
+      {enableOrbit && <OrbitControls autoRotate autoRotateSpeed={0.2} enableZoom={false} />}
 
       {/* Subtle Fog */}
       <fog attach="fog" args={['#0a0e27', 10, 100]} />

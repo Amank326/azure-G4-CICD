@@ -20,6 +20,7 @@ const HomePage3D = () => {
   const [activeMenu, setActiveMenu] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showLanding, setShowLanding] = useState(true);
 
   useEffect(() => {
     fetchFiles();
@@ -40,7 +41,6 @@ const HomePage3D = () => {
       }
     } catch (err) {
       console.error('Error fetching files:', err);
-      // Use mock data if API fails
       setFiles([
         { id: '1', name: 'Sample Document.pdf', size: 1024000, uploadedAt: new Date().toISOString(), description: 'Sample file for demonstration', category: 'Documents' },
         { id: '2', name: 'need_for_speed_heat_video_game_2-wallpaper-1920x1080 (1).jpg', size: 2048000, uploadedAt: new Date(Date.now() - 86400000).toISOString(), description: '', category: 'Images' },
@@ -99,6 +99,92 @@ const HomePage3D = () => {
           category: 'Uploads'
         };
         setFiles([newFile, ...files]);
+      });
+    }
+  };
+
+  // AICM Landing Page View
+  if (showLanding) {
+    return (
+      <Background3D cameraZ={22} intensity={0.95}>
+        <div className="landing-hero-container">
+          {/* Navigation */}
+          <nav className="landing-nav">
+            <div className="nav-logo">
+              <h2>CloudFlow</h2>
+            </div>
+            <button 
+              className="nav-cta-btn"
+              onClick={() => setShowLanding(false)}
+            >
+              Enter Dashboard
+            </button>
+          </nav>
+
+          {/* Hero Section */}
+          <div className="hero-content">
+            <div className="hero-text">
+              <h1 className="hero-title">
+                Intelligent Cloud <span className="gradient-text">File Management</span>
+              </h1>
+              <p className="hero-subtitle">
+                Experience AI-powered file organization with stunning 3D visualization. 
+                Manage, search, and organize your files effortlessly.
+              </p>
+
+              {/* Feature Pills */}
+              <div className="feature-pills">
+                <div className="pill">✨ AI-Powered Search</div>
+                <div className="pill">🚀 Lightning Fast</div>
+                <div className="pill">🔒 Secure Storage</div>
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="hero-cta-buttons">
+                <button 
+                  className="btn-primary"
+                  onClick={() => setShowLanding(false)}
+                >
+                  Get Started
+                </button>
+                <button className="btn-secondary">
+                  Learn More
+                </button>
+              </div>
+
+              {/* Stats */}
+              <div className="hero-stats">
+                <div className="stat-item">
+                  <span className="stat-number">{stats.totalFiles}+</span>
+                  <span className="stat-label">Files Stored</span>
+                </div>
+                <div className="stat-divider"></div>
+                <div className="stat-item">
+                  <span className="stat-number">{stats.storageUsed}</span>
+                  <span className="stat-label">GB Used</span>
+                </div>
+                <div className="stat-divider"></div>
+                <div className="stat-item">
+                  <span className="stat-number">{stats.categories}</span>
+                  <span className="stat-label">Categories</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Scroll Indicator */}
+            <div className="scroll-indicator">
+              <div className="mouse">
+                <div className="wheel"></div>
+              </div>
+              <p>Scroll to explore</p>
+            </div>
+          </div>
+        </div>
+      </Background3D>
+    );
+  }
+
+  // Dashboard View (existing code continues)        setFiles([newFile, ...files]);
       });
       setUploadProgress(100);
       setTimeout(() => setUploadProgress(0), 2000);
