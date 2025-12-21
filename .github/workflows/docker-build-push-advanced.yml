@@ -29,7 +29,6 @@ env:
   GITHUB_REGISTRY: ghcr.io
   IMAGE_NAME_BACKEND: azure-g4-cicd-backend
   IMAGE_NAME_FRONTEND: azure-g4-cicd-frontend
-  BUILD_DATE: ${{ github.event.head_commit.timestamp || format('{0:O}', now()) }}
 
 jobs:
   # ========================================
@@ -42,11 +41,19 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       commit_sha: ${{ steps.commit.outputs.sha }}
       branch_name: ${{ steps.branch.outputs.name }}
+      build_date: ${{ steps.build_date.outputs.date }}
     steps:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: 📅 Get Build Date
+        id: build_date
+        run: |
+          BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "date=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "📅 Build Date: $BUILD_DATE"
 
       - name: 🏷️ Get Version
         id: version
@@ -127,7 +134,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            BUILD_DATE=${{ env.BUILD_DATE }}
+            BUILD_DATE=${{ needs.setup.outputs.build_date }}
             VCS_REF=${{ needs.setup.outputs.commit_sha }}
             VERSION=${{ needs.setup.outputs.version }}
 
@@ -189,7 +196,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            BUILD_DATE=${{ env.BUILD_DATE }}
+            BUILD_DATE=${{ needs.setup.outputs.build_date }}
             VCS_REF=${{ needs.setup.outputs.commit_sha }}
             VERSION=${{ needs.setup.outputs.version }}
 
