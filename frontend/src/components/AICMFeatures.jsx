@@ -31,17 +31,7 @@ const AICMFeatures = ({ stats }) => {
 
   const features = [
     {
-      icon: '🔍',
-      title: 'AI-Powered Search',
-      description: 'Intelligent search that understands your content. Find files instantly with natural language queries.'
-    },
-    {
-      icon: '⚡',
-      title: 'Lightning Fast',
-      description: 'Experience sub-second file operations. Optimized for speed and performance at scale.'
-    },
-    {
-      icon: '🔒',
+      icon: '�',
       title: 'Enterprise Security',
       description: 'Military-grade encryption and compliance. Your data is always protected and private.'
     },
@@ -54,11 +44,6 @@ const AICMFeatures = ({ stats }) => {
       icon: '📊',
       title: 'Smart Analytics',
       description: 'Get insights into your data usage. Track trends and optimize storage efficiently.'
-    },
-    {
-      icon: '🚀',
-      title: 'Auto Organization',
-      description: 'Automatic file categorization and tagging. No manual organization needed.'
     }
   ];
 
@@ -66,7 +51,7 @@ const AICMFeatures = ({ stats }) => {
     <section className="aicm-features-section">
       <div className="features-container">
         <div className="section-header">
-          <h2>Why CloudFlow?</h2>
+          <h2>Core Features</h2>
           <p>Everything you need for modern file management</p>
         </div>
 

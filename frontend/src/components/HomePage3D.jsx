@@ -24,6 +24,10 @@ const HomePage3D = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showLanding, setShowLanding] = useState(true);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [notes, setNotes] = useState([]);
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [selectedFileForNote, setSelectedFileForNote] = useState(null);
 
   // Use AICM Animations
   useAICMAnimations();
@@ -92,59 +96,170 @@ const HomePage3D = () => {
     setFiles(files.map(f => f.id === updatedFile.id ? updatedFile : f));
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const selectedFiles = e.target.files;
     if (selectedFiles) {
-      Array.from(selectedFiles).forEach(file => {
-        const newFile = {
-          id: Date.now().toString(),
-          name: file.name,
-          size: file.size,
-          uploadedAt: new Date().toISOString(),
-          description: '',
-          category: 'Uploads'
-        };
-        setFiles([newFile, ...files]);
+      Array.from(selectedFiles).forEach(async (file) => {
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('notes', document.getElementById('notes-input')?.value || '');
+
+          setUploadProgress(50);
+          const response = await fetch('http://localhost:5000/api/files', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (response.ok) {
+            const uploadedFile = await response.json();
+            setFiles([uploadedFile, ...files]);
+            setUploadProgress(100);
+            setTimeout(() => setUploadProgress(0), 1500);
+            alert('✅ File uploaded successfully!');
+            document.getElementById('notes-input').value = '';
+          } else {
+            alert('❌ Failed to upload file');
+            setUploadProgress(0);
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+          alert('❌ Error uploading file: ' + error.message);
+          setUploadProgress(0);
+        }
       });
+    }
+  };
+
+  const handleDownloadFile = async (file) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/files/${file.id}`);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        link.click();
+        URL.revokeObjectURL(url);
+        alert('✅ File downloaded successfully!');
+      } else {
+        alert('❌ Failed to download file');
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('❌ Error downloading file: ' + error.message);
+    }
+    setOpenMenuId(null);
+  };
+
+  const handleDeleteFile = async (fileId) => {
+    if (window.confirm('Are you sure you want to delete this file?')) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/files/${fileId}`, {
+          method: 'DELETE'
+        });
+        if (response.ok) {
+          setFiles(files.filter(f => f.id !== fileId));
+          alert('✅ File deleted successfully!');
+        } else {
+          alert('❌ Failed to delete file');
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        alert('❌ Error deleting file: ' + error.message);
+      }
+    }
+    setOpenMenuId(null);
+  };
+
+  const addNote = (noteText, fileId) => {
+    if (!noteText.trim()) {
+      alert('⚠️ Please enter a note!');
+      return;
+    }
+    const newNote = {
+      id: Date.now(),
+      text: noteText,
+      fileId: fileId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    setNotes([newNote, ...notes]);
+    document.getElementById('notes-input').value = '';
+    alert('✅ Note created successfully!');
+  };
+
+  const updateNote = (noteId, noteText) => {
+    if (!noteText.trim()) {
+      alert('⚠️ Please enter a note!');
+      return;
+    }
+    setNotes(notes.map(note => 
+      note.id === noteId 
+        ? { ...note, text: noteText, updatedAt: new Date().toISOString() }
+        : note
+    ));
+    setEditingNoteId(null);
+    alert('✅ Note updated successfully!');
+  };
+
+  const deleteNote = (noteId) => {
+    if (window.confirm('Delete this note?')) {
+      setNotes(notes.filter(note => note.id !== noteId));
+      alert('✅ Note deleted successfully!');
+    }
+  };
+
+  const getNotesForFile = (fileId) => {
+    return notes.filter(note => note.fileId === fileId);
+  };
+
+  const handleQuickAction = (action) => {
+    switch(action) {
+      case 'upload':
+        setActiveMenu('upload');
+        document.getElementById('file-input')?.click();
+        break;
+      case 'search':
+        setActiveMenu('search');
+        break;
+      case 'notes':
+        setActiveMenu('upload');
+        setTimeout(() => document.getElementById('notes-input')?.focus(), 100);
+        break;
+      case 'analytics':
+        setActiveMenu('analytics');
+        break;
+      default:
+        break;
     }
   };
 
   // AICM Landing Page View
   if (showLanding) {
     return (
-      <div style={{ width: '100%', overflow: 'auto' }}>
-        <Background3D cameraZ={22} intensity={0.95}>
+      <div style={{ width: '100%', overflow: 'auto', background: 'linear-gradient(135deg, #0f0e1e 0%, #1a1a3e 25%, #0d3b66 50%, #1a1a3e 75%, #0f0e1e 100%)' }}>
+        <Suspense fallback={null}>
+          <Background3D cameraZ={22} intensity={1.2}>
           <div className="landing-hero-container">
             {/* Navigation */}
             <nav className="landing-nav">
               <div className="nav-logo">
-                <h2>CloudFlow</h2>
+                <h2 style={{ color: '#ffffff', fontSize: '28px', fontWeight: '700', letterSpacing: '1px' }}>File Management</h2>
               </div>
-              <button 
-                className="nav-cta-btn"
-                onClick={() => setShowLanding(false)}
-              >
-                Enter Dashboard
-              </button>
             </nav>
 
             {/* Hero Section */}
             <div className="hero-content">
               <div className="hero-text">
                 <h1 className="hero-title">
-                  Intelligent Cloud <span className="gradient-text">File Management</span>
+                  <span className="gradient-text">Cloud</span> <span className="gradient-text">File Management</span>
                 </h1>
-                <p className="hero-subtitle">
-                  Experience AI-powered file organization with stunning 3D visualization. 
+                <p className="hero-subtitle" style={{ color: '#e0e0e0' }}>
+                  Experience intelligent file organization with stunning 3D visualization. 
                   Manage, search, and organize your files effortlessly.
                 </p>
-
-                {/* Feature Pills */}
-                <div className="feature-pills">
-                  <div className="pill">✨ AI-Powered Search</div>
-                  <div className="pill">🚀 Lightning Fast</div>
-                  <div className="pill">🔒 Secure Storage</div>
-                </div>
 
                 {/* CTA Buttons */}
                 <div className="hero-cta-buttons">
@@ -152,28 +267,25 @@ const HomePage3D = () => {
                     className="btn-primary"
                     onClick={() => setShowLanding(false)}
                   >
-                    Get Started
-                  </button>
-                  <button className="btn-secondary">
-                    Learn More
+                    Ready to Transform Your File Management
                   </button>
                 </div>
 
                 {/* Stats */}
                 <div className="hero-stats">
                   <div className="stat-item">
-                    <span className="stat-number">{stats.totalFiles}+</span>
-                    <span className="stat-label">Files Stored</span>
+                    <span className="stat-number" style={{ color: '#00d4ff' }}>{stats.totalFiles}+</span>
+                    <span className="stat-label" style={{ color: '#ffffff' }}>Files Stored</span>
                   </div>
                   <div className="stat-divider"></div>
                   <div className="stat-item">
-                    <span className="stat-number">{stats.storageUsed}</span>
-                    <span className="stat-label">GB Used</span>
+                    <span className="stat-number" style={{ color: '#00d4ff' }}>{stats.storageUsed}</span>
+                    <span className="stat-label" style={{ color: '#ffffff' }}>GB Used</span>
                   </div>
                   <div className="stat-divider"></div>
                   <div className="stat-item">
-                    <span className="stat-number">{stats.categories}</span>
-                    <span className="stat-label">Categories</span>
+                    <span className="stat-number" style={{ color: '#00d4ff' }}>{stats.categories}</span>
+                    <span className="stat-label" style={{ color: '#ffffff' }}>Categories</span>
                   </div>
                 </div>
               </div>
@@ -187,107 +299,19 @@ const HomePage3D = () => {
               </div>
             </div>
           </div>
-        </div>
+        </Background3D>
+        </Suspense>
 
         {/* Features Section */}
         <AICMFeatures stats={stats} />
 
         {/* Footer Section */}
         <AICMFooter onGetStarted={() => setShowLanding(false)} />
-      </Background3D>
       </div>
     );
   }
 
-  // Dashboard View (existing code continues)
-      setTimeout(() => setUploadProgress(0), 2000);
-    }
-  };
-
-  const handleQuickAction = (action) => {
-    switch(action) {
-      case 'upload':
-        setActiveMenu('upload');
-        document.getElementById('file-input')?.click();
-        break;
-      case 'search':
-        setActiveMenu('search');
-        break;
-      case 'share':
-        // Share - Copy share link to clipboard
-        const shareLink = `${window.location.origin}?share=${Date.now()}`;
-        navigator.clipboard.writeText(shareLink);
-        alert('✅ Share link copied to clipboard!\n\n' + shareLink);
-        break;
-      case 'backup':
-        // Backup - Export all files as JSON
-        if (files.length === 0) {
-          alert('❌ No files to backup!');
-          break;
-        }
-        const backupData = {
-          timestamp: new Date().toISOString(),
-          totalFiles: files.length,
-          files: files,
-          stats: stats
-        };
-        const backupJson = JSON.stringify(backupData, null, 2);
-        const blob = new Blob([backupJson], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `backup-${Date.now()}.json`;
-        link.click();
-        URL.revokeObjectURL(url);
-        alert('✅ Backup downloaded successfully!');
-        break;
-      case 'organize':
-        // Organize - Group files by category
-        const categories = new Map();
-        files.forEach(file => {
-          const cat = file.category || 'Uncategorized';
-          if (!categories.has(cat)) {
-            categories.set(cat, []);
-          }
-          categories.get(cat).push(file.name);
-        });
-        let organizeMsg = '📂 Files organized by category:\n\n';
-        categories.forEach((fileList, cat) => {
-          organizeMsg += `${cat} (${fileList.length} files)\n`;
-          fileList.slice(0, 3).forEach(name => organizeMsg += `  • ${name}\n`);
-          if (fileList.length > 3) organizeMsg += `  ... and ${fileList.length - 3} more\n`;
-          organizeMsg += '\n';
-        });
-        alert(organizeMsg);
-        break;
-      case 'archive':
-        // Archive - Create archive of all files
-        if (files.length === 0) {
-          alert('❌ No files to archive!');
-          break;
-        }
-        const archiveData = {
-          name: `Archive_${new Date().toLocaleDateString().replace(/\//g, '-')}`,
-          createdAt: new Date().toISOString(),
-          fileCount: files.length,
-          totalSize: files.reduce((sum, f) => sum + (f.size || 0), 0),
-          files: files.map(f => ({ name: f.name, size: f.size, date: f.uploadedAt }))
-        };
-        const archiveJson = JSON.stringify(archiveData, null, 2);
-        const archiveBlob = new Blob([archiveJson], { type: 'application/json' });
-        const archiveUrl = URL.createObjectURL(archiveBlob);
-        const archiveLink = document.createElement('a');
-        archiveLink.href = archiveUrl;
-        archiveLink.download = `archive-${Date.now()}.json`;
-        archiveLink.click();
-        URL.revokeObjectURL(archiveUrl);
-        alert(`✅ Archive created!\n\nTotal files: ${files.length}\nSize: ${(archiveData.totalSize / 1024 / 1024).toFixed(2)} MB`);
-        break;
-      default:
-        break;
-    }
-  };
-
+  // Dashboard View
   return (
     <div className="homepage-3d-container">
       {/* 3D Background */}
@@ -296,8 +320,8 @@ const HomePage3D = () => {
           {/* Sidebar - positioned absolutely over 3D */}
           <aside className="sidebar">
         <div className="sidebar-logo">
-          <div className="logo-icon">☁️</div>
-          <h2>Cloud File &<br />Notes</h2>
+          <div className="logo-icon animated-cloud">☁️</div>
+          <h2 style={{ color: '#ffffff' }}>Cloud File<br />Management</h2>
         </div>
 
         <nav className="sidebar-nav">
@@ -361,7 +385,7 @@ const HomePage3D = () => {
         {/* Header */}
         <header className="main-header">
           <div className="header-left">
-            <h1 className="page-title">Cloud File & Notes <span className="highlight">Management</span></h1>
+            <h1 className="page-title gradient-title">Cloud File & Notes <span className="highlight">Management</span></h1>
             <p className="page-subtitle">Upload files, add notes, and organize everything in one place</p>
           </div>
           <div className="header-right">
@@ -379,14 +403,6 @@ const HomePage3D = () => {
 
         {/* Content Area */}
         <div className="content-area">
-          {/* Hidden File Input */}
-          <input
-            id="file-input"
-            type="file"
-            multiple
-            onChange={handleFileUpload}
-            style={{ display: 'none' }}
-          />
 
           {/* Overview Tab */}
           {activeMenu === 'overview' && (
@@ -404,14 +420,72 @@ const HomePage3D = () => {
                     </div>
                   ) : (
                     getRecentFiles().map((file) => (
-                      <div key={file.id} className="file-item">
+                      <div key={file.id} className="file-item" style={{ position: 'relative' }}>
                         <div className="file-icon">📄</div>
                         <div className="file-info">
                           <p className="file-name">{file.name}</p>
-                          <p className="file-date">{new Date(file.uploadedAt).toLocaleDateString()}</p>
+                          <p className="file-date">{new Date(file.createdAt || file.uploadedAt).toLocaleDateString()}</p>
+                          {file.notes && <p style={{ color: '#00d4ff', fontSize: '12px', marginTop: '5px' }}>📝 {file.notes}</p>}
                         </div>
                         <div className="file-actions">
-                          <button className="file-menu">⋯</button>
+                          <button 
+                            className="file-menu"
+                            onClick={() => setOpenMenuId(openMenuId === file.id ? null : file.id)}
+                            style={{ position: 'relative' }}
+                          >
+                            ⋯
+                          </button>
+                          {openMenuId === file.id && (
+                            <div style={{
+                              position: 'absolute',
+                              top: '100%',
+                              right: 0,
+                              background: 'rgba(13, 59, 102, 0.95)',
+                              border: '1px solid #00d4ff',
+                              borderRadius: '6px',
+                              boxShadow: '0 4px 12px rgba(0, 212, 255, 0.3)',
+                              zIndex: 1000,
+                              minWidth: '150px'
+                            }}>
+                              <button 
+                                onClick={() => handleDownloadFile(file)}
+                                style={{
+                                  width: '100%',
+                                  padding: '10px 15px',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: '#ffffff',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  transition: 'all 0.2s'
+                                }}
+                                onMouseOver={(e) => e.target.style.background = 'rgba(0, 212, 255, 0.2)'}
+                                onMouseOut={(e) => e.target.style.background = 'transparent'}
+                              >
+                                📥 Download
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteFile(file.id)}
+                                style={{
+                                  width: '100%',
+                                  padding: '10px 15px',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: '#ff6b6b',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  transition: 'all 0.2s',
+                                  borderTop: '1px solid #00d4ff'
+                                }}
+                                onMouseOver={(e) => e.target.style.background = 'rgba(255, 107, 107, 0.2)'}
+                                onMouseOut={(e) => e.target.style.background = 'transparent'}
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))
@@ -441,24 +515,199 @@ const HomePage3D = () => {
           {/* Upload Tab */}
           {activeMenu === 'upload' && (
             <section className="upload-section">
-              <h2 className="section-title">📤 Upload Files & Add Notes</h2>
+              <h2 className="section-title">📤 Upload Files & Add Cloud Notes</h2>
               <div className="upload-container">
-                <label htmlFor="file-input" className="upload-area">
-                  <div className="upload-icon">📁</div>
-                  <p className="upload-text">Drag & drop your file here or click to browse</p>
-                  <p className="upload-support">Supported: All file types</p>
-                  {uploadProgress > 0 && (
-                    <div className="upload-progress-bar">
-                      <div className="progress-fill" style={{ width: `${uploadProgress}%` }}></div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                  {/* File Upload Area */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <input
+                      id="file-input"
+                      type="file"
+                      multiple
+                      onChange={handleFileUpload}
+                      style={{ display: 'none' }}
+                      accept="*/*"
+                    />
+                    <label htmlFor="file-input" className="upload-area" style={{ cursor: 'pointer', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <div className="upload-icon">📁</div>
+                      <p className="upload-text">Click to upload or drag files here</p>
+                      <p className="upload-support">Supported: All file types</p>
+                      {uploadProgress > 0 && (
+                        <div className="upload-progress-bar">
+                          <div className="progress-fill" style={{ width: `${uploadProgress}%` }}></div>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+
+                  {/* Advanced Cloud Notes Area */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <label style={{ color: '#ffffff', fontWeight: '600', fontSize: '14px' }}>📝 Cloud Notes</label>
+                    <textarea
+                      id="notes-input"
+                      placeholder="Write your important notes here... You can add notes for your files or create standalone notes."
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '2px solid #00d4ff',
+                        backgroundColor: 'rgba(13, 59, 102, 0.6)',
+                        color: '#ffffff',
+                        fontFamily: 'inherit',
+                        resize: 'none',
+                        minHeight: '120px',
+                        fontSize: '14px'
+                      }}
+                    />
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        onClick={() => addNote(document.getElementById('notes-input')?.value || '', null)}
+                        style={{
+                          flex: 1,
+                          padding: '10px 20px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          backgroundColor: '#00d4ff',
+                          color: '#000000',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
+                        onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+                      >
+                        ✔️ Save Note
+                      </button>
+                      <button
+                        onClick={() => document.getElementById('notes-input').value = ''}
+                        style={{
+                          padding: '10px 20px',
+                          borderRadius: '6px',
+                          border: '1px solid #00d4ff',
+                          backgroundColor: 'transparent',
+                          color: '#00d4ff',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onMouseOver={(e) => e.target.style.background = 'rgba(0, 212, 255, 0.1)'}
+                        onMouseOut={(e) => e.target.style.background = 'transparent'}
+                      >
+                        🗑️ Clear
+                      </button>
                     </div>
-                  )}
-                </label>
+                  </div>
+                </div>
+
+                {/* All Notes Section */}
+                {notes.length > 0 && (
+                  <div style={{ marginTop: '30px', padding: '20px', background: 'rgba(13, 59, 102, 0.3)', borderRadius: '8px', border: '1px solid #00d4ff' }}>
+                    <h3 style={{ color: '#ffffff', marginBottom: '15px' }}>📋 All Notes ({notes.length})</h3>
+                    <div style={{ display: 'grid', gap: '10px', maxHeight: '400px', overflowY: 'auto' }}>
+                      {notes.map((note) => (
+                        <div key={note.id} style={{ padding: '12px', background: 'rgba(0, 212, 255, 0.1)', borderRadius: '6px', border: '1px solid #00d4ff' }}>
+                          {editingNoteId === note.id ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                              <textarea
+                                defaultValue={note.text}
+                                id={`edit-note-${note.id}`}
+                                style={{
+                                  padding: '10px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #00d4ff',
+                                  backgroundColor: 'rgba(13, 59, 102, 0.8)',
+                                  color: '#ffffff',
+                                  fontFamily: 'inherit',
+                                  resize: 'none',
+                                  minHeight: '80px'
+                                }}
+                              />
+                              <div style={{ display: 'flex', gap: '10px' }}>
+                                <button
+                                  onClick={() => updateNote(note.id, document.getElementById(`edit-note-${note.id}`)?.value || '')}
+                                  style={{
+                                    flex: 1,
+                                    padding: '8px',
+                                    background: '#00d4ff',
+                                    color: '#000000',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontWeight: '600'
+                                  }}
+                                >
+                                  💾 Save
+                                </button>
+                                <button
+                                  onClick={() => setEditingNoteId(null)}
+                                  style={{
+                                    flex: 1,
+                                    padding: '8px',
+                                    background: 'transparent',
+                                    color: '#00d4ff',
+                                    border: '1px solid #00d4ff',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontWeight: '600'
+                                  }}
+                                >
+                                  ✕ Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <p style={{ color: '#e0e0e0', marginBottom: '8px', fontSize: '14px' }}>{note.text}</p>
+                              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                                <button
+                                  onClick={() => setEditingNoteId(note.id)}
+                                  style={{
+                                    padding: '5px 12px',
+                                    background: 'transparent',
+                                    color: '#00d4ff',
+                                    border: '1px solid #00d4ff',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px'
+                                  }}
+                                >
+                                  ✏️ Edit
+                                </button>
+                                <button
+                                  onClick={() => deleteNote(note.id)}
+                                  style={{
+                                    padding: '5px 12px',
+                                    background: 'transparent',
+                                    color: '#ff6b6b',
+                                    border: '1px solid #ff6b6b',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px'
+                                  }}
+                                >
+                                  🗑️ Delete
+                                </button>
+                              </div>
+                              <p style={{ color: '#00d4ff', fontSize: '11px', marginTop: '8px' }}>{new Date(note.updatedAt).toLocaleString()}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent Uploads List */}
                 {files.length > 0 && (
-                  <div className="recent-uploads">
-                    <h3>Recent Uploads</h3>
-                    <ul>
-                      {files.slice(0, 5).map(file => (
-                        <li key={file.id}>{file.name}</li>
+                  <div className="recent-uploads" style={{ marginTop: '30px', padding: '20px', background: 'rgba(13, 59, 102, 0.3)', borderRadius: '8px', border: '1px solid #00d4ff' }}>
+                    <h3 style={{ color: '#ffffff', marginBottom: '15px' }}>📋 Recent Uploads ({files.length})</h3>
+                    <ul style={{ listStyle: 'none', padding: 0, maxHeight: '300px', overflowY: 'auto' }}>
+                      {files.slice(0, 10).map(file => (
+                        <li key={file.id} style={{ padding: '10px', background: 'rgba(0, 212, 255, 0.1)', marginBottom: '8px', borderRadius: '6px', color: '#ffffff', borderLeft: '3px solid #00d4ff' }}>
+                          <strong>{file.name}</strong>
+                          {file.notes && <p style={{ color: '#b0b0b0', fontSize: '12px', marginTop: '5px' }}>📝 {file.notes}</p>}
+                          <p style={{ color: '#00d4ff', fontSize: '12px', marginTop: '5px' }}>{new Date(file.createdAt).toLocaleString()}</p>
+                        </li>
                       ))}
                     </ul>
                   </div>
@@ -474,7 +723,7 @@ const HomePage3D = () => {
           {activeMenu === 'settings' && <Settings />}
         </div>
       </main>
-        </Background3D>
+      </Background3D>
       </Suspense>
     </div>
   );

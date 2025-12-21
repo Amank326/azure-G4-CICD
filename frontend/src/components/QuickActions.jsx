@@ -5,10 +5,8 @@ const QuickActions = ({ onAction }) => {
   const actions = [
     { id: 1, icon: '📤', label: 'Upload File', action: 'upload' },
     { id: 2, icon: '🔍', label: 'Search Files', action: 'search' },
-    { id: 3, icon: '�', label: 'Share Link', action: 'share' },
-    { id: 4, icon: '💾', label: 'Backup Files', action: 'backup' },
-    { id: 5, icon: '📂', label: 'Organize', action: 'organize' },
-    { id: 6, icon: '📦', label: 'Archive', action: 'archive' },
+    { id: 3, icon: '📝', label: 'Cloud Notes', action: 'notes' },
+    { id: 4, icon: '📊', label: 'Analytics', action: 'analytics' },
   ];
 
   const handleActionClick = (action) => {

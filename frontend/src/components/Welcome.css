@@ -6,13 +6,27 @@
    Tertiary: #8338EC (Vibrant Purple)
    ============================================ */
 
+/* ============================================
+   3D Canvas Background
+   ============================================ */
+
+.welcome-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    opacity: 0.8;
+}
+
 .welcome-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100vh;
-    background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 25%, #2d1b3d 50%, #1a1f3a 75%, #0a0e27 100%);
+    background: linear-gradient(135deg, #0d0d20 0%, #1a0f35 20%, #2d1b4e 50%, #1a1a3f 80%, #0a0e27 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -37,7 +51,8 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    z-index: 0;
+    z-index: 2;
+    mix-blend-mode: screen;
 }
 
 .gradient-blob-1,
@@ -53,7 +68,7 @@
 .gradient-blob-1 {
     width: 400px;
     height: 400px;
-    background: linear-gradient(135deg, #00D4FF, #8338EC);
+    background: linear-gradient(135deg, #00D4FF, #667eea);
     top: -100px;
     left: -100px;
     animation-delay: 0s;
@@ -62,7 +77,7 @@
 .gradient-blob-2 {
     width: 500px;
     height: 500px;
-    background: linear-gradient(135deg, #FF006E, #00D4FF);
+    background: linear-gradient(135deg, #764ba2, #FF006E);
     bottom: -150px;
     right: -100px;
     animation-delay: -5s;
@@ -71,7 +86,7 @@
 .gradient-blob-3 {
     width: 350px;
     height: 350px;
-    background: linear-gradient(135deg, #8338EC, #FF006E);
+    background: linear-gradient(135deg, #ff00ff, #00D4FF);
     top: 50%;
     right: 10%;
     animation-delay: -10s;
@@ -118,12 +133,13 @@
 
 .cloud-logo-container {
     position: relative;
-    width: 250px;
-    height: 250px;
+    width: 200px;
+    height: 200px;
     display: flex;
     align-items: center;
     justify-content: center;
     animation: logoEntrance 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+    margin-bottom: 50px;
 }
 
 @keyframes logoEntrance {
@@ -143,7 +159,7 @@
 }
 
 .cloud-logo {
-    font-size: 120px;
+    font-size: 100px;
     animation: cloudBounce 3s ease-in-out infinite;
     display: flex;
     align-items: center;
@@ -276,6 +292,17 @@
 
 .welcome-text {
     animation: textFadeIn 0.8s ease-out 0.4s both;
+    text-align: center;
+}
+
+.welcome-description {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 30px 0 0 0;
+    line-height: 1.8;
+    letter-spacing: 0.3px;
+    max-width: 600px;
+    animation: slideInUp 0.7s ease-out 0.6s both;
 }
 
 @keyframes textFadeIn {
@@ -290,19 +317,22 @@
 }
 
 .project-title {
-    font-size: 56px;
+    font-size: 60px;
     font-weight: 900;
-    margin: 0 0 30px 0;
-    letter-spacing: -1px;
+    margin: 0 0 50px 0;
+    letter-spacing: -2px;
+    text-shadow: 0 0 30px rgba(131, 56, 236, 0.3);
 }
 
 .title-gradient {
-    background: linear-gradient(90deg, #00D4FF 0%, #8338EC 40%, #FF006E 100%);
+    background: linear-gradient(to right, #f5f7ff 0%, #ede9ff 20%, #ddd4ff 40%, #bfb0ff 60%, #8a7aff 80%, #5a4aff 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     display: inline-block;
-    animation: gradientShift 6s ease infinite;
+    font-weight: 900;
+    font-size: 60px;
+    letter-spacing: -2px;
 }
 
 @keyframes gradientShift {
@@ -314,24 +344,49 @@
     }
 }
 
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .intro-line {
     font-size: 18px;
-    color: rgba(255, 255, 255, 0.85);
-    margin: 10px 0;
+    color: rgba(255, 255, 255, 0.95);
+    margin: 14px auto;
     font-weight: 500;
-    letter-spacing: 0.3px;
-    animation: slideInRight 0.6s ease-out both;
+    letter-spacing: 0.4px;
+    animation: slideInRight 0.7s ease-out both;
+    width: 90%;
+    max-width: 700px;
+    padding: 22px 32px;
+    background: linear-gradient(135deg, rgba(20, 30, 70, 0.5) 0%, rgba(45, 27, 95, 0.3) 100%);
+    border: 1.5px solid rgba(102, 126, 234, 0.25);
+    border-radius: 14px;
+    backdrop-filter: blur(15px);
+    transition: all 0.4s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 16px;
 }
 
 .intro-1 { animation-delay: 0.5s; }
-.intro-2 { animation-delay: 0.6s; }
-.intro-3 { animation-delay: 0.7s; }
-.intro-4 { animation-delay: 0.8s; }
+.intro-2 { animation-delay: 0.65s; }
+.intro-3 { animation-delay: 0.8s; }
+.intro-4 { animation-delay: 0.95s; }
 
 @keyframes slideInRight {
     from {
         opacity: 0;
-        transform: translateX(-30px);
+        transform: translateX(-40px);
     }
     to {
         opacity: 1;
