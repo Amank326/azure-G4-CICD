@@ -1,6 +1,14 @@
 # Use an official Node.js runtime as a parent image
 FROM node:16-alpine
 
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+LABEL org.label-schema.build-date=$BUILD_DATE \
+      org.label-schema.vcs-ref=$VCS_REF \
+      org.label-schema.version=$VERSION
+
 # Set the working directory in the container
 WORKDIR /app
 

@@ -1,3 +1,7 @@
+# ⚠️ DEVELOPMENT ONLY - This docker-compose file uses local 'build' context
+# For production deployments, pull pre-built images from Docker Hub (756191/*)
+# Production uses GitHub Actions for builds: .github/workflows/docker-build-push-advanced.yml
+
 version: '3.8'
 
 services:
