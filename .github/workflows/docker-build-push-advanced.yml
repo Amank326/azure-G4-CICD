@@ -29,6 +29,7 @@ env:
   GITHUB_REGISTRY: ghcr.io
   IMAGE_NAME_BACKEND: azure-g4-cicd-backend
   IMAGE_NAME_FRONTEND: azure-g4-cicd-frontend
+  BUILD_DATE: ${{ github.event.head_commit.timestamp || format('{0:O}', now()) }}
 
 jobs:
   # ========================================
@@ -126,7 +127,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            BUILD_DATE=${{ env.BUILD_DATE }}
             VCS_REF=${{ needs.setup.outputs.commit_sha }}
             VERSION=${{ needs.setup.outputs.version }}
 
@@ -188,7 +189,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            BUILD_DATE=${{ env.BUILD_DATE }}
             VCS_REF=${{ needs.setup.outputs.commit_sha }}
             VERSION=${{ needs.setup.outputs.version }}
 
