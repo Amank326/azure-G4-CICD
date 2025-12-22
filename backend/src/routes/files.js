@@ -51,9 +51,13 @@ router.post(
   validateFileMetadata,
   validateFileUpload,
   asyncHandler(async (req, res) => {
+    const startTime = Date.now();
     try {
       const { userId, description, tags } = req.body;
       const file = req.file;
+
+      // Log upload start
+      console.log(`📤 [UPLOAD START] userId: ${userId}, fileName: ${file.originalname}, size: ${file.size} bytes`);
 
       // Generate unique file ID
       const fileId = uuidv4();
@@ -61,13 +65,15 @@ router.post(
       // Create blob name (unique to avoid conflicts)
       const blobName = `${userId}/${fileId}-${file.originalname}`;
 
-      console.log(`Uploading file: ${blobName}`);
+      console.log(`📝 [BLOB UPLOAD] blobName: ${blobName}`);
 
       // Upload to Blob Storage
       const blockBlobClient = blobContainer.getBlockBlobClient(blobName);
       await blockBlobClient.upload(file.buffer, file.size, {
         blobHTTPHeaders: { blobContentType: file.mimetype },
       });
+
+      console.log(`✅ [BLOB SUCCESS] blobUrl: ${blockBlobClient.url}`);
 
       // Create metadata document for Cosmos DB
       const fileMetadata = {
@@ -86,13 +92,17 @@ router.post(
         },
       };
 
+      console.log(`📊 [COSMOS SAVE] fileId: ${fileId}`);
+
       // Save metadata to Cosmos DB
       await container.items.create(fileMetadata);
 
-      console.log(`File uploaded successfully: ${fileId}`);
+      const duration = Date.now() - startTime;
+      console.log(`✨ [UPLOAD SUCCESS] id: ${fileId}, duration: ${duration}ms`);
 
       // Return success response
       res.status(201).json({
+        success: true,
         message: "File uploaded successfully",
         file: {
           id: fileId,
@@ -102,9 +112,17 @@ router.post(
           uploadedAt: fileMetadata.uploadedAt,
           blobUrl: blockBlobClient.url,
         },
+        duration: `${duration}ms`,
       });
     } catch (error) {
-      console.error("Upload error:", error);
+      const duration = Date.now() - startTime;
+      console.error(`❌ [UPLOAD ERROR] duration: ${duration}ms, error:`, error.message);
+      console.error(`📋 [ERROR DETAILS]`, {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        statusCode: error.statusCode,
+      });
       throw error;
     }
   })
