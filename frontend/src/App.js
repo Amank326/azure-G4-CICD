@@ -10,6 +10,18 @@ function App() {
     });
     const [showWelcome, setShowWelcome] = useState(true);
 
+    // Initialize userId on app startup
+    useEffect(() => {
+        // Check if userId exists, if not create one
+        if (!localStorage.getItem('userId')) {
+            const newUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('userId', newUserId);
+            console.log('✅ Generated new User ID:', newUserId);
+        } else {
+            console.log('ℹ️ Using existing User ID:', localStorage.getItem('userId'));
+        }
+    }, []);
+
     useEffect(() => {
         // Apply dark mode class to body and html
         if (darkMode) {

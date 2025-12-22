@@ -24,10 +24,10 @@ COPY . .
 # Expose port 5000
 EXPOSE 5000
 
-# Health check - simplified
+# Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=2 \
   CMD curl -f http://localhost:5000/health || exit 0
 
-# Run the application (use simplified server if index fails)
-CMD ["sh", "-c", "node src/index.js 2>/dev/null || node src/server.js"]
+# Start application
+CMD ["npm", "start"]
 
