@@ -47,24 +47,46 @@ const FileUpload = ({ onUpload }) => {
             return;
         }
 
+        // Get userId from localStorage (or use default)
+        const userId = localStorage.getItem('userId') || 'user_' + Date.now();
+        
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('notes', notes);
+        formData.append('userId', userId);
+        formData.append('description', notes);
+        formData.append('tags', 'web-upload');
 
         setUploading(true);
         setUploadProgress(0);
 
         try {
-            const response = await fetch(API_CONFIG.ENDPOINTS.UPLOAD, {
+            const uploadUrl = API_CONFIG.ENDPOINTS.UPLOAD;
+            console.log('🔍 Uploading to:', uploadUrl);
+            console.log('📦 Using API Config:', API_CONFIG);
+            console.log('📝 Form Data - userId:', userId, 'description:', notes);
+            
+            const response = await fetch(uploadUrl, {
                 method: 'POST',
                 body: formData,
+                headers: {
+                    'Accept': 'application/json',
+                },
             });
 
+            console.log('📡 Response Status:', response.status);
+            console.log('📡 Response Headers:', {
+                'content-type': response.headers.get('content-type'),
+                'access-control-allow-origin': response.headers.get('access-control-allow-origin'),
+            });
+            
             if (!response.ok) {
-                throw new Error('Upload failed');
+                const errorText = await response.text();
+                console.error('❌ Server Error:', errorText);
+                throw new Error(`Upload failed: ${response.status} ${response.statusText} - ${errorText}`);
             }
 
             const newFile = await response.json();
+            console.log('✅ Upload Success:', newFile);
             onUpload(newFile);
             setFile(null);
             setNotes('');
@@ -76,6 +98,7 @@ const FileUpload = ({ onUpload }) => {
             }, 1500);
             
         } catch (err) {
+            console.error('❌ Upload Error:', err);
             setError(err.message || 'An error occurred during upload.');
         } finally {
             setUploading(false);
