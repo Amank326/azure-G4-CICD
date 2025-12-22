@@ -59,17 +59,26 @@ async function verifyConnections() {
     console.log("Verifying Azure connections...");
     
     // Test Cosmos DB
-    const { resources: databases } = await cosmosClient.databases.readAll().fetchAll();
-    console.log("✅ Cosmos DB connected successfully");
+    try {
+      const { resources: databases } = await cosmosClient.databases.readAll().fetchAll();
+      console.log("✅ Cosmos DB connected successfully");
+    } catch (cosmosError) {
+      console.warn("⚠️ Cosmos DB connection warning:", cosmosError.message);
+    }
     
     // Test Blob Storage
-    const properties = await blobContainer.getProperties();
-    console.log("✅ Blob Storage connected successfully");
+    try {
+      const properties = await blobContainer.getProperties();
+      console.log("✅ Blob Storage connected successfully");
+    } catch (blobError) {
+      console.warn("⚠️ Blob Storage connection warning:", blobError.message);
+    }
     
     return true;
   } catch (error) {
-    console.error("❌ Connection verification failed:", error.message);
-    // Don't throw - let the app start but log the issue
+    console.warn("⚠️ Connection verification had warnings:", error.message);
+    // Don't throw - let the app start even if connections have issues
+    return false;
   }
 }
 

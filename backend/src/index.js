@@ -126,8 +126,13 @@ const server = app.listen(PORT, async () => {
   console.log(`🌐 Azure App Service: Will use configured URL`);
   console.log(`${"=".repeat(50)}\n`);
 
-  // Verify Azure connections
-  await verifyConnections();
+  // Verify Azure connections (non-blocking)
+  try {
+    await verifyConnections();
+  } catch (error) {
+    console.warn("⚠️ Connection verification had issues:", error.message);
+    // Continue running even if connection fails initially
+  }
 
   console.log(`\n📚 API Documentation:`);
   console.log(`  Health Check: GET http://localhost:${PORT}/health`);
