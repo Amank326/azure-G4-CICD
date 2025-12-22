@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import API_CONFIG from '../config';
 import './FileUpload.css';
 
 const FileUpload = ({ onUpload }) => {
@@ -54,7 +55,7 @@ const FileUpload = ({ onUpload }) => {
         setUploadProgress(0);
 
         try {
-            const response = await fetch('http://localhost:5000/api/files', {
+            const response = await fetch(API_CONFIG.ENDPOINTS.UPLOAD, {
                 method: 'POST',
                 body: formData,
             });

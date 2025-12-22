@@ -2,8 +2,6 @@
 # For production deployments, pull pre-built images from Docker Hub (756191/*)
 # Production uses GitHub Actions for builds: .github/workflows/docker-build-push-advanced.yml
 
-version: '3.8'
-
 services:
   backend:
     build:
@@ -22,8 +20,6 @@ services:
       - COSMOS_KEY=${COSMOS_KEY}
       - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING}
       - CONTAINER_NAME=${CONTAINER_NAME}
-    depends_on:
-      - nginx
     networks:
       - file-manager-network
 
@@ -32,20 +28,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: file-manager-frontend
-    environment:
-      - REACT_APP_API_URL=http://nginx/api
-    depends_on:
-      - backend
-    networks:
-      - file-manager-network
-
-  nginx:
-    image: nginx:stable-alpine
-    container_name: file-manager-nginx
     ports:
       - "80:80"
-    volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000/api
     depends_on:
       - backend
     networks:

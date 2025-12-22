@@ -53,14 +53,3 @@ jobs:
             ${{ env.DOCKER_HUB_USERNAME }}/file-manager-frontend:${{ github.sha }}
           cache-from: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/file-manager-frontend:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/file-manager-frontend:buildcache,mode=max
-
-      - name: Build NGINX image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./
-          dockerfile: ./Dockerfile.nginx
-          push: ${{ github.event_name == 'push' }}
-          tags: |
-            ${{ env.DOCKER_HUB_USERNAME }}/file-manager-nginx:latest
-            ${{ env.DOCKER_HUB_USERNAME }}/file-manager-nginx:${{ github.sha }}
-        if: hashFiles('./Dockerfile.nginx') != ''

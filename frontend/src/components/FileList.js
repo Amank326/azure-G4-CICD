@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import API_CONFIG from '../config';
 import './FileList.css';
 
 const FileList = ({ files, onFileDelete, onFileUpdate }) => {
@@ -54,7 +55,7 @@ const FileList = ({ files, onFileDelete, onFileUpdate }) => {
     });
 
     const handleDownload = (fileId, fileName) => {
-        window.location.href = `http://localhost:5000/api/files/${fileId}`;
+        window.location.href = API_CONFIG.ENDPOINTS.GET(fileId);
     };
 
     const handleEdit = (file) => {
@@ -65,7 +66,7 @@ const FileList = ({ files, onFileDelete, onFileUpdate }) => {
     const handleSaveEdit = async (fileId) => {
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:5000/api/files/${fileId}`, {
+            const response = await fetch(API_CONFIG.ENDPOINTS.GET(fileId), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -94,7 +95,7 @@ const FileList = ({ files, onFileDelete, onFileUpdate }) => {
         if (window.confirm('Are you sure you want to delete this file?')) {
             setLoading(true);
             try {
-                const response = await fetch(`http://localhost:5000/api/files/${fileId}`, {
+                const response = await fetch(API_CONFIG.ENDPOINTS.DELETE(fileId), {
                     method: 'DELETE',
                 });
 

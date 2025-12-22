@@ -1,178 +1,297 @@
-const express = require('express');
+/**
+ * File Management Routes
+ * 
+ * Endpoints:
+ * - GET /health - Health check
+ * - POST /upload - Upload file to Azure Blob & save metadata to Cosmos DB
+ * - GET / - List all files for a user
+ * - GET /:id - Get specific file metadata
+ * - DELETE /:id - Delete file from Blob & Cosmos DB
+ */
+
+const express = require("express");
+const multer = require("multer");
+const { v4: uuidv4 } = require("uuid");
+const { container, blobContainer } = require("../config");
+const { asyncHandler } = require("../middleware/errorHandler");
+const {
+  validateFileUpload,
+  validateFileMetadata,
+  validateFileId,
+  validateListQuery,
+} = require("../middleware/validation");
+
 const router = express.Router();
-const multer = require('multer');
-const { BlobServiceClient } = require('@azure/storage-blob');
-const { CosmosClient } = require('@azure/cosmos');
 
-// Initialize Azure clients
-const cosmosClient = new CosmosClient({ 
-    endpoint: process.env.COSMOS_ENDPOINT, 
-    key: process.env.COSMOS_KEY 
-});
-const database = cosmosClient.database('file-notes-db');
-const container = database.container('files');
-
-const blobServiceClient = BlobServiceClient.fromConnectionString(
-    process.env.AZURE_STORAGE_CONNECTION_STRING
-);
-const containerClient = blobServiceClient.getContainerClient(
-    process.env.CONTAINER_NAME || 'files'
-);
-
+// Configure multer for file upload (store in memory)
 const upload = multer({ storage: multer.memoryStorage() });
 
-// GET all files
-router.get('/', async (req, res) => {
-    try {
-        const { resources: items } = await container.items.readAll().fetchAll();
-        console.log('Files fetched:', items.length);
-        res.json(Array.isArray(items) ? items : []);
-    } catch (error) {
-        console.error('Error fetching files:', error);
-        res.status(500).json({ error: 'Failed to fetch files', details: error.message });
-    }
+// ========================================
+// ENDPOINT 1: GET /health
+// Purpose: Health check for monitoring
+// ========================================
+
+router.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    service: "File Management API",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
 });
 
-// GET a specific file for download
-router.get('/:fileId', async (req, res) => {
+// ========================================
+// ENDPOINT 2: POST /upload
+// Purpose: Upload file to Azure Blob + save metadata to Cosmos DB
+// ========================================
+
+router.post(
+  "/upload",
+  upload.single("file"),
+  validateFileMetadata,
+  validateFileUpload,
+  asyncHandler(async (req, res) => {
     try {
-        const { fileId } = req.params;
-        const blockBlobClient = containerClient.getBlockBlobClient(fileId);
-        
-        // Check if blob exists
-        const exists = await blockBlobClient.exists();
-        if (!exists) {
-            return res.status(404).json({ error: 'File not found' });
-        }
+      const { userId, description, tags } = req.body;
+      const file = req.file;
 
-        // Get the file metadata from Cosmos
-        const { resources: items } = await container.items
-            .query(`SELECT * FROM c WHERE c.id = @fileId`, { parameters: [{ name: '@fileId', value: fileId }] })
-            .fetchAll();
+      // Generate unique file ID
+      const fileId = uuidv4();
 
-        if (items.length === 0) {
-            return res.status(404).json({ error: 'File metadata not found' });
-        }
+      // Create blob name (unique to avoid conflicts)
+      const blobName = `${userId}/${fileId}-${file.originalname}`;
 
-        const fileMetadata = items[0];
+      console.log(`Uploading file: ${blobName}`);
 
-        // Download blob
-        const downloadBlockBlobResponse = await blockBlobClient.download(0);
-        const buffer = await streamToBuffer(downloadBlockBlobResponse.readableStreamBody);
+      // Upload to Blob Storage
+      const blockBlobClient = blobContainer.getBlockBlobClient(blobName);
+      await blockBlobClient.upload(file.buffer, file.size, {
+        blobHTTPHeaders: { blobContentType: file.mimetype },
+      });
 
-        res.setHeader('Content-Disposition', `attachment; filename="${fileMetadata.name}"`);
-        res.setHeader('Content-Type', fileMetadata.contentType);
-        res.send(buffer);
+      // Create metadata document for Cosmos DB
+      const fileMetadata = {
+        id: fileId,
+        userId: userId,
+        fileName: file.originalname,
+        fileSize: file.size,
+        mimeType: file.mimetype,
+        blobUrl: blockBlobClient.url,
+        blobName: blobName,
+        uploadedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        metadata: {
+          description: description || "",
+          tags: tags ? (Array.isArray(tags) ? tags : [tags]) : [],
+        },
+      };
+
+      // Save metadata to Cosmos DB
+      await container.items.create(fileMetadata);
+
+      console.log(`File uploaded successfully: ${fileId}`);
+
+      // Return success response
+      res.status(201).json({
+        message: "File uploaded successfully",
+        file: {
+          id: fileId,
+          fileName: file.originalname,
+          fileSize: file.size,
+          mimeType: file.mimetype,
+          uploadedAt: fileMetadata.uploadedAt,
+          blobUrl: blockBlobClient.url,
+        },
+      });
     } catch (error) {
-        console.error('Error downloading file:', error);
-        res.status(500).json({ error: 'Failed to download file' });
+      console.error("Upload error:", error);
+      throw error;
     }
-});
+  })
+);
 
-// POST a new file
-router.post('/', upload.single('file'), async (req, res) => {
+// ========================================
+// ENDPOINT 3: GET /
+// Purpose: List all files for a user
+// ========================================
+
+router.get(
+  "/",
+  validateListQuery,
+  asyncHandler(async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'No file provided' });
-        }
+      const { userId } = req.query;
 
-        const blobName = new Date().getTime() + '-' + req.file.originalname;
-        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-        
-        // Upload to blob storage
-        await blockBlobClient.upload(req.file.buffer, req.file.size);
+      console.log(`Fetching files for user: ${userId}`);
 
-        // Create metadata in Cosmos DB
-        const newItem = {
-            id: blobName,
-            name: req.file.originalname,
-            notes: req.body.notes || '',
-            blobUrl: blockBlobClient.url,
-            contentType: req.file.mimetype,
-            fileSize: req.file.size,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
+      // Query Cosmos DB for all files of this user
+      const query = "SELECT * FROM c WHERE c.userId = @userId ORDER BY c.uploadedAt DESC";
+      const { resources: items } = await container.items
+        .query(query, {
+          parameters: [{ name: "@userId", value: userId }],
+        })
+        .fetchAll();
 
-        const { resource: createdItem } = await container.items.create(newItem);
+      console.log(`Found ${items.length} files for user: ${userId}`);
 
-        res.status(201).json(createdItem);
+      // Return files list
+      res.status(200).json({
+        message: "Files retrieved successfully",
+        count: items.length,
+        files: items.map((item) => ({
+          id: item.id,
+          fileName: item.fileName,
+          fileSize: item.fileSize,
+          mimeType: item.mimeType,
+          uploadedAt: item.uploadedAt,
+          blobUrl: item.blobUrl,
+          description: item.metadata?.description,
+          tags: item.metadata?.tags,
+        })),
+      });
     } catch (error) {
-        console.error('Error uploading file:', error);
-        res.status(500).json({ error: error.message || 'Failed to upload file' });
+      console.error("Fetch files error:", error);
+      throw error;
     }
-});
+  })
+);
 
-// PUT - Update file notes
-router.put('/:fileId', async (req, res) => {
+// ========================================
+// ENDPOINT 4: GET /:id
+// Purpose: Get specific file metadata
+// ========================================
+
+router.get(
+  "/:id",
+  validateFileId,
+  asyncHandler(async (req, res) => {
     try {
-        const { fileId } = req.params;
-        const { notes } = req.body;
+      const { id } = req.params;
+      const { userId } = req.query;
 
-        // Query to get the item first
-        const { resources: items } = await container.items
-            .query(`SELECT * FROM c WHERE c.id = @fileId`, { parameters: [{ name: '@fileId', value: fileId }] })
-            .fetchAll();
+      console.log(`Fetching file: ${id} for user: ${userId}`);
 
-        if (items.length === 0) {
-            return res.status(404).json({ error: 'File not found' });
-        }
+      // Query Cosmos DB for specific file
+      const query = "SELECT * FROM c WHERE c.id = @id AND c.userId = @userId";
+      const { resources: items } = await container.items
+        .query(query, {
+          parameters: [
+            { name: "@id", value: id },
+            { name: "@userId", value: userId },
+          ],
+        })
+        .fetchAll();
 
-        const item = items[0];
-        item.notes = notes || item.notes;
-        item.updatedAt = new Date().toISOString();
-
-        const { resource: updatedItem } = await container.item(fileId, fileId).replace(item);
-
-        res.json(updatedItem);
-    } catch (error) {
-        console.error('Error updating file:', error);
-        res.status(500).json({ error: 'Failed to update file', details: error.message });
-    }
-});
-
-// DELETE a file
-router.delete('/:fileId', async (req, res) => {
-    try {
-        const { fileId } = req.params;
-
-        // First verify file exists in Cosmos
-        const { resources: items } = await container.items
-            .query(`SELECT * FROM c WHERE c.id = @fileId`, { parameters: [{ name: '@fileId', value: fileId }] })
-            .fetchAll();
-
-        if (items.length === 0) {
-            return res.status(404).json({ error: 'File not found' });
-        }
-
-        // Delete from blob storage
-        const blockBlobClient = containerClient.getBlockBlobClient(fileId);
-        try {
-            await blockBlobClient.delete();
-        } catch (blobError) {
-            console.warn('Warning deleting blob:', blobError.message);
-        }
-
-        // Delete from Cosmos DB
-        const item = items[0];
-        await container.item(fileId, fileId).delete();
-
-        res.json({ message: 'File deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting file:', error);
-        res.status(500).json({ error: 'Failed to delete file', details: error.message });
-    }
-});
-
-// Helper function to convert stream to buffer
-async function streamToBuffer(readableStream) {
-    return new Promise((resolve, reject) => {
-        const chunks = [];
-        readableStream.on('data', (data) => {
-            chunks.push(data instanceof Buffer ? data : Buffer.from(data));
+      if (items.length === 0) {
+        return res.status(404).json({
+          error: {
+            message: "File not found",
+          },
         });
-        readableStream.on('end', () => {
-            resolve(Buffer.concat(chunks));
+      }
+
+      const file = items[0];
+
+      console.log(`File found: ${id}`);
+
+      // Return file metadata
+      res.status(200).json({
+        message: "File retrieved successfully",
+        file: {
+          id: file.id,
+          fileName: file.fileName,
+          fileSize: file.fileSize,
+          mimeType: file.mimeType,
+          uploadedAt: file.uploadedAt,
+          updatedAt: file.updatedAt,
+          blobUrl: file.blobUrl,
+          description: file.metadata?.description,
+          tags: file.metadata?.tags,
+        },
+      });
+    } catch (error) {
+      console.error("Fetch file error:", error);
+      throw error;
+    }
+  })
+);
+
+// ========================================
+// ENDPOINT 5: DELETE /:id
+// Purpose: Delete file from both Blob & Cosmos DB
+// ========================================
+
+router.delete(
+  "/:id",
+  validateFileId,
+  asyncHandler(async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { userId } = req.query;
+
+      console.log(`Deleting file: ${id} for user: ${userId}`);
+
+      // Query Cosmos DB to get file details (especially blobName)
+      const query = "SELECT * FROM c WHERE c.id = @id AND c.userId = @userId";
+      const { resources: items } = await container.items
+        .query(query, {
+          parameters: [
+            { name: "@id", value: id },
+            { name: "@userId", value: userId },
+          ],
+        })
+        .fetchAll();
+
+      if (items.length === 0) {
+        return res.status(404).json({
+          error: {
+            message: "File not found",
+          },
+        });
+      }
+
+      const file = items[0];
+
+      // Delete from Blob Storage
+      const blobClient = blobContainer.getBlockBlobClient(file.blobName);
+      await blobClient.delete();
+      console.log(`Blob deleted: ${file.blobName}`);
+
+      // Delete from Cosmos DB
+      await container.item(file.id, userId).delete();
+      console.log(`Cosmos DB record deleted: ${file.id}`);
+
+      // Return success response
+      res.status(200).json({
+        message: "File deleted successfully",
+        deletedFile: {
+          id: file.id,
+          fileName: file.fileName,
+        },
+      });
+    } catch (error) {
+      console.error("Delete file error:", error);
+      throw error;
+    }
+  })
+);
+
+// ========================================
+// ERROR ROUTES
+// ========================================
+
+// 404 handler for unknown routes
+router.use((req, res) => {
+  res.status(404).json({
+    error: {
+      message: "Route not found",
+      path: req.path,
+      method: req.method,
+    },
+  });
+});
+
+module.exports = router;
         });
         readableStream.on('error', reject);
     });
