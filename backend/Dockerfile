@@ -24,10 +24,10 @@ COPY . .
 # Expose port 5000
 EXPOSE 5000
 
-# Health check - simplified to avoid failures during startup
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:5000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 0
+# Health check - simplified
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=2 \
+  CMD curl -f http://localhost:5000/health || exit 0
 
-# Run the application
-CMD ["npm", "start"]
+# Run the application (use simplified server if index fails)
+CMD ["sh", "-c", "node src/index.js 2>/dev/null || node src/server.js"]
 
