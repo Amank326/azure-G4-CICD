@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Settings.css';
 
-const Settings = () => {
+const Settings = ({ darkMode, setDarkMode }) => {
   const [settings, setSettings] = useState({
     username: 'User Account',
     email: 'your.email@example.com',
@@ -9,7 +9,7 @@ const Settings = () => {
     twoFactorAuth: false,
     emailNotifications: true,
     autoLockInactive: true,
-    darkMode: true,
+    darkMode: darkMode || false,
     autoOrganizeFiles: true,
     notificationSound: true,
   });
@@ -25,11 +25,22 @@ const Settings = () => {
     }
   }, []);
 
+  // Sync dark mode from parent
+  useEffect(() => {
+    setSettings(prev => ({...prev, darkMode: darkMode}));
+  }, [darkMode]);
+
   const handleToggle = (key) => {
+    const newValue = !settings[key];
     setSettings(prev => ({
       ...prev,
-      [key]: !prev[key]
+      [key]: newValue
     }));
+    
+    // If toggling dark mode, update parent
+    if (key === 'darkMode' && setDarkMode) {
+      setDarkMode(newValue);
+    }
   };
 
   const handleInputChange = (e) => {

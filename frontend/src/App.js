@@ -4,16 +4,35 @@ import HomePage3D from './components/HomePage3D';
 import './App.css';
 
 function App() {
-    // eslint-disable-next-line no-unused-vars
-    const [darkMode, setDarkMode] = useState(false);
+    const [darkMode, setDarkMode] = useState(() => {
+        // Load dark mode preference from localStorage
+        return localStorage.getItem('userSettings_darkMode') === 'true';
+    });
     const [showWelcome, setShowWelcome] = useState(true);
 
     useEffect(() => {
-        // Welcome stays until user clicks button
-    }, []);
+        // Apply dark mode class to body and html
+        if (darkMode) {
+            document.body.classList.add('dark-mode');
+            document.documentElement.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+            document.documentElement.classList.remove('dark-mode');
+        }
+        // Save preference
+        localStorage.setItem('userSettings_darkMode', darkMode);
+    }, [darkMode]);
 
+    // Listen for storage changes from other tabs/components
     useEffect(() => {
-        document.body.className = darkMode ? 'dark-mode' : '';
+        const handleStorageChange = () => {
+            const savedDarkMode = localStorage.getItem('userSettings_darkMode') === 'true';
+            if (savedDarkMode !== darkMode) {
+                setDarkMode(savedDarkMode);
+            }
+        };
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
     }, [darkMode]);
 
     const handleWelcomeEnter = () => {
@@ -25,7 +44,7 @@ function App() {
             {showWelcome && <Welcome onEnter={handleWelcomeEnter} />}
             
             {!showWelcome && (
-                <HomePage3D />
+                <HomePage3D darkMode={darkMode} setDarkMode={setDarkMode} />
             )}
         </div>
     );

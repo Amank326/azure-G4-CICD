@@ -11,7 +11,7 @@ import { Background3D } from './3D';
 import { useAICMAnimations } from './3D/useAICMAnimations';
 import './HomePage3D.css';
 
-const HomePage3D = () => {
+const HomePage3D = ({ darkMode, setDarkMode }) => {
   const [files, setFiles] = useState([]);
   const [stats, setStats] = useState({
     totalFiles: 0,
@@ -720,7 +720,7 @@ const HomePage3D = () => {
           {activeMenu === 'analytics' && <Analytics files={files} />}
 
           {/* Settings Tab */}
-          {activeMenu === 'settings' && <Settings />}
+          {activeMenu === 'settings' && <Settings darkMode={darkMode} setDarkMode={setDarkMode} />}
         </div>
       </main>
       </Background3D>
