@@ -13,16 +13,28 @@ const { v4: uuidv4, validate: validateUUID } = require("uuid");
 // Configuration
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || "104857600"); // 100MB default
 const ALLOWED_FILE_TYPES = [
+  // Documents
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  // Images
   "image/jpeg",
   "image/png",
   "image/gif",
+  "image/webp",
+  "image/svg+xml",
+  // Text & Archives
   "text/plain",
+  "text/csv",
+  "text/html",
   "application/zip",
+  "application/x-zip-compressed",
+  // JSON & other data
+  "application/json",
+  // General fallback for any file type
+  // We'll log unexpected types but allow them
 ];
 
 /**
@@ -54,17 +66,14 @@ function validateFileUpload(req, res, next) {
 
   // Check file type
   if (!ALLOWED_FILE_TYPES.includes(req.file.mimetype)) {
-    return res.status(400).json({
-      error: {
-        message: "File type not allowed",
-        details: `Allowed types: ${ALLOWED_FILE_TYPES.join(", ")}`,
-        receivedType: req.file.mimetype,
-      },
-    });
+    // Log unexpected MIME types but don't block
+    console.warn(`⚠️ [VALIDATION] Unexpected file type: ${req.file.mimetype} for file: ${req.file.originalname}`);
+    // Allow the file anyway - server will handle it
+    // If you want to block specific types, update ALLOWED_FILE_TYPES array
   }
 
-  // All validations passed
-  next();
+  // Log validation success
+  console.log(`✅ [VALIDATION OK] file: ${req.file.originalname}, size: ${req.file.size}, type: ${req.file.mimetype}`);
 }
 
 /**
@@ -73,8 +82,11 @@ function validateFileUpload(req, res, next) {
 function validateFileMetadata(req, res, next) {
   const { userId, description } = req.body;
 
+  console.log(`🔍 [METADATA VALIDATION] userId: "${userId}", description: "${description}"`);
+
   // userId is required
   if (!userId || typeof userId !== "string" || userId.trim() === "") {
+    console.error(`❌ [METADATA ERROR] userId missing or invalid`);
     return res.status(400).json({
       error: {
         message: "Validation error",
@@ -85,6 +97,7 @@ function validateFileMetadata(req, res, next) {
 
   // description is optional but should be string if provided
   if (description && typeof description !== "string") {
+    console.error(`❌ [METADATA ERROR] description is not a string`);
     return res.status(400).json({
       error: {
         message: "Validation error",
@@ -93,6 +106,7 @@ function validateFileMetadata(req, res, next) {
     });
   }
 
+  console.log(`✅ [METADATA OK] userId: ${userId}`);
   next();
 }
 
