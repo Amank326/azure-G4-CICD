@@ -12,9 +12,39 @@ require("dotenv").config(); // Load environment variables from .env file
 
 const express = require("express");
 const cors = require("cors");
-const { errorHandler } = require("./middleware/errorHandler");
-const filesRouter = require("./routes/files");
-const { verifyConnections } = require("./config");
+
+// Safely load modules with error handling
+let errorHandler, filesRouter, verifyConnections;
+
+try {
+  ({ errorHandler } = require("./middleware/errorHandler"));
+  console.log("✅ Error handler loaded");
+} catch (err) {
+  console.warn("⚠️ Error handler loading:", err.message);
+  errorHandler = (err, req, res, next) => {
+    console.error("Error:", err);
+    res.status(err.status || 500).json({ error: err.message || "Internal server error" });
+  };
+}
+
+try {
+  filesRouter = require("./routes/files");
+  console.log("✅ Files router loaded");
+} catch (err) {
+  console.warn("⚠️ Files router loading:", err.message);
+  filesRouter = require("express").Router();
+}
+
+try {
+  ({ verifyConnections } = require("./config"));
+  console.log("✅ Config loaded");
+} catch (err) {
+  console.warn("⚠️ Config loading:", err.message);
+  verifyConnections = async () => {
+    console.warn("⚠️ Cosmos/Storage not available, running in lite mode");
+    return false;
+  };
+}
 
 // Create Express app
 const app = express();
