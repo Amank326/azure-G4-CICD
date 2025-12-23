@@ -61,9 +61,20 @@ const FileUpload = ({ onUpload }) => {
 
         try {
             const uploadUrl = API_CONFIG.ENDPOINTS.UPLOAD;
-            console.log('🔍 Uploading to:', uploadUrl);
-            console.log('📦 Using API Config:', API_CONFIG);
-            console.log('📝 Form Data - userId:', userId, 'description:', notes);
+            const startTime = performance.now();
+            
+            console.log('═══════════════════════════════════════');
+            console.log('🚀 FILE UPLOAD INITIATED');
+            console.log('═══════════════════════════════════════');
+            console.log('📤 Upload URL:', uploadUrl);
+            console.log('📦 File Info:');
+            console.log('   Name:', file.name);
+            console.log('   Size:', (file.size / 1024).toFixed(2), 'KB');
+            console.log('   Type:', file.type);
+            console.log('👤 User ID:', userId);
+            console.log('📝 Description:', notes);
+            console.log('🏷️  Tags: web-upload');
+            console.log('═══════════════════════════════════════');
             
             const response = await fetch(uploadUrl, {
                 method: 'POST',
@@ -73,20 +84,30 @@ const FileUpload = ({ onUpload }) => {
                 },
             });
 
-            console.log('📡 Response Status:', response.status);
-            console.log('📡 Response Headers:', {
-                'content-type': response.headers.get('content-type'),
-                'access-control-allow-origin': response.headers.get('access-control-allow-origin'),
-            });
+            const endTime = performance.now();
+            const duration = (endTime - startTime).toFixed(0);
+
+            console.log('📡 Response Status:', response.status, response.statusText);
+            console.log('📡 Response Headers:');
+            console.log('   Content-Type:', response.headers.get('content-type'));
+            console.log('   CORS Origin:', response.headers.get('access-control-allow-origin'));
+            console.log('⏱️  Request Duration:', duration, 'ms');
             
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('❌ Server Error:', errorText);
-                throw new Error(`Upload failed: ${response.status} ${response.statusText} - ${errorText}`);
+                console.error('❌ SERVER ERROR RESPONSE:');
+                console.error('   Status:', response.status);
+                console.error('   Text:', errorText);
+                throw new Error(`Upload failed: ${response.status} ${response.statusText}\n${errorText}`);
             }
 
             const newFile = await response.json();
-            console.log('✅ Upload Success:', newFile);
+            console.log('✅ UPLOAD SUCCESS');
+            console.log('   File ID:', newFile.id);
+            console.log('   Blob URL:', newFile.blobUrl);
+            console.log('   Duration:', duration, 'ms');
+            console.log('═══════════════════════════════════════');
+            
             onUpload(newFile);
             setFile(null);
             setNotes('');
@@ -98,7 +119,12 @@ const FileUpload = ({ onUpload }) => {
             }, 1500);
             
         } catch (err) {
-            console.error('❌ Upload Error:', err);
+            console.error('═══════════════════════════════════════');
+            console.error('❌ UPLOAD ERROR DETAILS:');
+            console.error('   Message:', err.message);
+            console.error('   Stack:', err.stack);
+            console.error('   API URL:', API_CONFIG.ENDPOINTS.UPLOAD);
+            console.error('═══════════════════════════════════════');
             setError(err.message || 'An error occurred during upload.');
         } finally {
             setUploading(false);

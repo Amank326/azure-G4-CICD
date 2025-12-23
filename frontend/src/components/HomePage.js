@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './HomePage.css';
 import FileUpload from './FileUpload';
 import FileList from './FileList';
+import API_CONFIG from '../config';
 
 const HomePage = ({ darkMode }) => {
     const [stats, setStats] = useState({ files: 0, storage: '0 GB', categories: 0, types: 0 });
@@ -34,20 +35,34 @@ const HomePage = ({ darkMode }) => {
 
     const fetchFiles = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/files');
+            console.log('📂 Fetching files from:', API_CONFIG.ENDPOINTS.LIST);
+            const response = await fetch(API_CONFIG.ENDPOINTS.LIST, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+            });
+            
+            console.log('📡 Files fetch - Status:', response.status);
+            
             if (response.ok) {
                 const data = await response.json();
                 const fileArray = Array.isArray(data) ? data : [];
-                console.log('Files loaded:', fileArray.length);
+                console.log('✅ Files loaded successfully:', fileArray.length, 'files');
+                console.table(fileArray.slice(0, 3)); // Log first 3 files
                 setFiles(fileArray);
                 setRecentFiles(fileArray.slice(0, 6));
             } else {
-                console.error('Failed to fetch files:', response.statusText);
+                console.error('❌ Failed to fetch files:', response.status, response.statusText);
+                const errorText = await response.text();
+                console.error('Error details:', errorText);
                 setFiles([]);
                 setRecentFiles([]);
             }
         } catch (err) {
-            console.error('Error fetching files:', err);
+            console.error('❌ Error fetching files:', err.message);
+            console.error('Stack:', err.stack);
             setFiles([]);
             setRecentFiles([]);
         }
@@ -55,7 +70,15 @@ const HomePage = ({ darkMode }) => {
 
     const fetchStats = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/files');
+            console.log('📊 Fetching stats from:', API_CONFIG.ENDPOINTS.LIST);
+            const response = await fetch(API_CONFIG.ENDPOINTS.LIST, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+            });
+            
             if (response.ok) {
                 const data = await response.json();
                 const fileArray = Array.isArray(data) ? data : [];
@@ -64,15 +87,17 @@ const HomePage = ({ darkMode }) => {
                     totalSize += file.fileSize || 0;
                 });
                 const sizeInGB = (totalSize / (1024 * 1024 * 1024)).toFixed(2);
-                setStats({
+                const stats = {
                     files: fileArray.length || 0,
                     storage: `${sizeInGB} GB`,
                     categories: 5,
                     types: new Set(fileArray.map(f => f.name?.split('.').pop() || 'unknown')).size || 0
-                });
+                };
+                console.log('✅ Stats calculated:', stats);
+                setStats(stats);
             }
         } catch (err) {
-            console.error('Error fetching stats:', err);
+            console.error('❌ Error fetching stats:', err.message);
         }
     };
 

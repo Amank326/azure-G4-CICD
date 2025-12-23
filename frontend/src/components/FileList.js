@@ -55,6 +55,8 @@ const FileList = ({ files, onFileDelete, onFileUpdate }) => {
     });
 
     const handleDownload = (fileId, fileName) => {
+        console.log('⬇️ Downloading file:', { fileId, fileName });
+        console.log('📥 Download URL:', API_CONFIG.ENDPOINTS.GET(fileId));
         window.location.href = API_CONFIG.ENDPOINTS.GET(fileId);
     };
 
@@ -66,25 +68,37 @@ const FileList = ({ files, onFileDelete, onFileUpdate }) => {
     const handleSaveEdit = async (fileId) => {
         setLoading(true);
         try {
-            const response = await fetch(API_CONFIG.ENDPOINTS.GET(fileId), {
+            const updateUrl = API_CONFIG.ENDPOINTS.GET(fileId);
+            console.log('✏️ Updating file:', { fileId, notes: editingNotes });
+            console.log('📤 Update URL:', updateUrl);
+            
+            const response = await fetch(updateUrl, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                 },
                 body: JSON.stringify({ notes: editingNotes }),
             });
 
+            console.log('📡 Update response - Status:', response.status);
+
             if (!response.ok) {
-                throw new Error('Failed to update notes');
+                const errorText = await response.text();
+                console.error('❌ Update failed:', response.status, errorText);
+                throw new Error(`Failed to update notes: ${response.status} ${response.statusText}`);
             }
 
             const updatedFile = await response.json();
+            console.log('✅ File updated successfully:', updatedFile);
+            
             if (onFileUpdate) {
                 onFileUpdate(updatedFile);
             }
             setEditingId(null);
             setEditingNotes('');
         } catch (err) {
+            console.error('❌ Error updating file:', err.message);
             setError(err.message || 'Failed to update notes');
         } finally {
             setLoading(false);
@@ -95,18 +109,32 @@ const FileList = ({ files, onFileDelete, onFileUpdate }) => {
         if (window.confirm('Are you sure you want to delete this file?')) {
             setLoading(true);
             try {
-                const response = await fetch(API_CONFIG.ENDPOINTS.DELETE(fileId), {
+                const deleteUrl = API_CONFIG.ENDPOINTS.DELETE(fileId);
+                console.log('🗑️ Deleting file:', { fileId });
+                console.log('📤 Delete URL:', deleteUrl);
+                
+                const response = await fetch(deleteUrl, {
                     method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                    },
                 });
 
+                console.log('📡 Delete response - Status:', response.status);
+
                 if (!response.ok) {
-                    throw new Error('Failed to delete file');
+                    const errorText = await response.text();
+                    console.error('❌ Delete failed:', response.status, errorText);
+                    throw new Error(`Failed to delete file: ${response.status} ${response.statusText}`);
                 }
+
+                console.log('✅ File deleted successfully');
 
                 if (onFileDelete) {
                     onFileDelete(fileId);
                 }
             } catch (err) {
+                console.error('❌ Error deleting file:', err.message);
                 setError(err.message || 'Failed to delete file');
             } finally {
                 setLoading(false);
