@@ -310,9 +310,3 @@ router.use((req, res) => {
 });
 
 module.exports = router;
-        });
-        readableStream.on('error', reject);
-    });
-}
-
-module.exports = router;
