@@ -54,37 +54,63 @@ const app = express();
 // ========================================
 
 // CORS Middleware - Allow requests from different origins
-// In production, restrict to specific domains
+// In production, restrict to specific domains only
 const corsOptions = {
+  // Origin validation function - only allow requests from authorized origins
   origin: function (origin, callback) {
+    // Define all allowed origins (both development and production)
     const allowedOrigins = [
+      // Local development
       "http://localhost",
       "http://localhost:3000",
       "http://localhost:80",
       "http://127.0.0.1:3000",
+      "http://127.0.0.1:80",
+      // Production - Azure Frontend App Service
       "https://file-manager-frontend-app.azurewebsites.net",
+      // Add your custom domain here when you have one
+      // "https://yourdomain.com",
     ];
 
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Allow requests with no origin header (e.g., mobile apps, curl, Postman)
+    // In production, you may want to remove this for stricter security
+    if (!origin) {
+      console.log('✅ CORS: Allowing request with no origin (mobile/curl)');
+      callback(null, true);
+      return;
+    }
+
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      console.log(`✅ CORS: Allowing request from authorized origin: ${origin}`);
       callback(null, true);
     } else {
+      console.warn(`❌ CORS: Rejecting request from unauthorized origin: ${origin}`);
       callback(new Error("Not allowed by CORS"), false);
     }
   },
+  // HTTP methods allowed by CORS
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  credentials: true,
+  // Allow credentials in CORS requests
+  // Set to true ONLY if using cookies/sessions (we're not, so false is fine)
+  credentials: false,
+  // Headers the client can send
   allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-  exposedHeaders: ["Content-Type", "Content-Length"],
-  maxAge: 3600,
+  // Headers the client can read from response
+  exposedHeaders: ["Content-Type", "Content-Length", "X-Total-Count"],
+  // How long browser caches preflight response (in seconds)
+  maxAge: 3600, // 1 hour
+  // Treat HTTP 200 as successful preflight response
   optionsSuccessStatus: 200,
 };
 
+// Apply CORS middleware globally
 app.use(cors(corsOptions));
 
-// Explicit OPTIONS handler for preflight requests
-app.options("*", cors(corsOptions));
-app.options("/api/files/upload", cors(corsOptions));
+// Explicit OPTIONS handlers for preflight requests
+// These ensure that browsers get proper CORS headers before sending actual requests
+app.options("*", cors(corsOptions)); // For all routes
+app.options("/api/files/upload", cors(corsOptions)); // Specific route with extra specificity
 
 // Body Parser Middleware - Parse JSON requests
 app.use(express.json({ limit: "10mb" }));

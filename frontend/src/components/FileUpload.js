@@ -79,9 +79,14 @@ const FileUpload = ({ onUpload }) => {
             const response = await fetch(uploadUrl, {
                 method: 'POST',
                 body: formData,
+                // Note: No 'Content-Type' header needed - FormData sets it automatically
+                // Note: No credentials mode needed - Azure backend uses CORS, not cookie auth
                 headers: {
                     'Accept': 'application/json',
                 },
+                // Important: Do NOT set credentials: 'include' unless backend requires cookies
+                // Our backend uses stateless auth (no sessions), so we don't need credentials
+                // credentials: 'omit', // Explicitly omit credentials (default behavior)
             });
 
             const endTime = performance.now();

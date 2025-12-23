@@ -1,208 +1,342 @@
-# Azure G4 CICD - Docker Build & Deployment
+# 🚀 Azure File Manager - Production Deployment Guide
 
-Advanced GitHub Actions CI/CD pipeline with automated Docker image builds and deployments.
+Complete Docker & Azure deployment solution with automatic CI/CD pipeline, production-ready CORS configuration, and environment-based API routing.
 
-## Overview
+## 📋 Table of Contents
+- [Quick Start](#quick-start)
+- [Production URLs](#production-urls)
+- [Environment Configuration](#environment-configuration)
+- [Production Deployment](#production-deployment)
+- [CORS & Security](#cors--security)
+- [Troubleshooting](#troubleshooting)
+- [Project Structure](#project-structure)
 
-This project implements a production-ready Docker containerization and CI/CD solution using:
-- **GitHub Actions** for automated builds
-- **Docker Buildx** for multi-platform image building
-- **Docker Hub** for image registry
-- **Trivy** for security scanning
-- **Kubernetes** for orchestration (optional)
+---
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 - Docker (for local development)
-- GitHub account with repository access
-- Docker Hub account with credentials
-
-### Environment Setup
-
-```bash
-# Copy environment template
-cp .env.example .env
-
-# Edit .env with your values
-# - COSMOS_ENDPOINT: Azure Cosmos DB endpoint
-# - COSMOS_KEY: Azure Cosmos DB primary key
-# - AZURE_STORAGE_CONNECTION_STRING: Azure Storage connection string
-```
+- Node.js 16+ (for development)
+- Azure account (for production deployment)
+- Git
 
 ### Local Development
 
 ```bash
-# Build and run locally with Docker Compose
+# Option 1: Using Docker Compose (recommended)
 docker-compose up --build
+
+# Option 2: Manual npm start
+# Terminal 1: Backend
+cd backend && npm install && npm start
+# Terminal 2: Frontend
+cd frontend && npm install && npm start
 
 # Access services
 # Frontend: http://localhost:3000
 # Backend: http://localhost:5000
-# Nginx: http://localhost:80
 ```
 
-## Architecture
+---
+
+## 🌐 Production URLs
+
+| Service | URL |
+|---------|-----|
+| **Frontend** | https://file-manager-frontend-app.azurewebsites.net |
+| **Backend API** | https://file-manager-backend-app.azurewebsites.net |
+| **Health Check** | https://file-manager-backend-app.azurewebsites.net/health |
+
+### API Endpoints
+
+```
+POST /api/files/upload         - Upload file
+GET  /api/files                - List all files
+GET  /api/files/{id}           - Get file details
+DELETE /api/files/{id}         - Delete file
+GET  /health                   - Health check
+```
+
+---
+
+## ⚙️ Environment Configuration
+
+### Frontend (.env files)
+
+#### Production - `.env.production`
+```bash
+REACT_APP_API_BASE_URL=https://file-manager-backend-app.azurewebsites.net
+REACT_APP_ENVIRONMENT=production
+GENERATE_SOURCEMAP=false
+```
+
+#### Development - `.env.development`
+```bash
+REACT_APP_API_BASE_URL=http://localhost:5000
+REACT_APP_ENVIRONMENT=development
+```
+
+#### Local Testing - `.env.local` (Git-ignored)
+```bash
+# Uncomment to override API URL
+# REACT_APP_API_BASE_URL=http://192.168.1.100:5000
+```
+
+### Backend (.env file)
+
+```bash
+# Server
+PORT=5000
+NODE_ENV=production
+WEBSITES_PORT=5000
+
+# Azure Cosmos DB
+COSMOS_ENDPOINT=https://your-account.documents.azure.com:443/
+COSMOS_KEY=your-primary-key
+COSMOS_DB_NAME=FileManagementDB
+COSMOS_CONTAINER_NAME=fileItems
+
+# Azure Blob Storage
+AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;...
+CONTAINER_NAME=files
+```
+
+### Set Azure App Service Variables
+
+```bash
+az webapp config appsettings set \
+  --resource-group file-manager-rg \
+  --name file-manager-backend-app \
+  --settings \
+    PORT=5000 \
+    NODE_ENV=production \
+    COSMOS_ENDPOINT="https://your-account.documents.azure.com:443/" \
+    COSMOS_KEY="your-key" \
+    COSMOS_DB_NAME="FileManagementDB" \
+    COSMOS_CONTAINER_NAME="fileItems" \
+    AZURE_STORAGE_CONNECTION_STRING="DefaultEndpointsProtocol=https;..." \
+    CONTAINER_NAME="files"
+```
+
+Or via **Azure Portal**:
+1. Go to **App Service** → **Configuration** → **Application settings**
+2. Click **+ New application setting**
+3. Add each setting above
+4. Click **Save**
+
+---
+
+## 🔐 CORS & Security
+
+### How It Works
+
+**Frontend Config:**
+```javascript
+// frontend/src/config.js - Automatic environment detection
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+// Uses .env.production in build, .env.development in npm start
+```
+
+**Backend CORS:**
+```javascript
+// backend/src/index.js
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'https://file-manager-frontend-app.azurewebsites.net'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: false, // Stateless - no cookies
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle OPTIONS preflight
+```
+
+### Preflight Request Flow
+
+```
+1. Browser: OPTIONS /api/files/upload
+   Origin: https://file-manager-frontend-app.azurewebsites.net
+
+2. Backend: HTTP 200 OK
+   Access-Control-Allow-Origin: https://file-manager-frontend-app.azurewebsites.net
+   Access-Control-Allow-Methods: POST, OPTIONS
+
+3. Browser: POST /api/files/upload
+   [file data]
+
+4. Backend: HTTP 200 OK
+   [response]
+```
+
+### Security Features
+
+✅ **No credentials** - Stateless architecture  
+✅ **Specific origins only** - Only Azure frontend allowed  
+✅ **HTTPS only** - All production URLs secured  
+✅ **No source maps** - Production builds optimized  
+✅ **Explicit headers** - Only required headers allowed  
+
+---
+
+## 🚀 Production Deployment
+
+### Build & Deploy Frontend
+
+```bash
+# Build for production (uses .env.production)
+cd frontend
+npm run build
+
+# Deploy to Azure
+az webapp up \
+  --resource-group file-manager-rg \
+  --name file-manager-frontend-app \
+  --location eastus
+```
+
+### Deploy Backend
+
+```bash
+cd backend
+az webapp up \
+  --resource-group file-manager-rg \
+  --name file-manager-backend-app \
+  --runtime "node|20-lts" \
+  --location eastus
+```
+
+### Verify Deployment
+
+```bash
+# Test frontend
+curl -I https://file-manager-frontend-app.azurewebsites.net
+# Expected: 200 OK
+
+# Test backend
+curl -I https://file-manager-backend-app.azurewebsites.net/health
+# Expected: 200 OK
+
+# Test CORS preflight
+curl -i -X OPTIONS https://file-manager-backend-app.azurewebsites.net/api/files/upload \
+  -H "Origin: https://file-manager-frontend-app.azurewebsites.net" \
+  -H "Access-Control-Request-Method: POST"
+# Expected: 200 OK with CORS headers
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### "Failed to fetch" Error
+
+| Problem | Solution |
+|---------|----------|
+| Backend not responding | Check: `curl https://file-manager-backend-app.azurewebsites.net/health` |
+| Wrong API URL | Verify `REACT_APP_API_BASE_URL` in npm run build |
+| CORS rejected | Check `corsOptions` in backend/src/index.js |
+| Network blocked | Check Azure Network Security Groups |
+
+### Check Status
+
+```bash
+# Backend logs
+az webapp log tail -g file-manager-rg -n file-manager-backend-app
+
+# Restart backend
+az webapp restart -g file-manager-rg -n file-manager-backend-app
+```
+
+### Test Locally
+
+```bash
+# Terminal 1: Start backend
+cd backend && npm start
+
+# Terminal 2: Test CORS
+curl -i -X OPTIONS http://localhost:5000/api/files/upload \
+  -H "Origin: http://localhost:3000" \
+  -H "Access-Control-Request-Method: POST"
+# Should return: 200 OK with CORS headers
+```
+
+---
+
+## 📁 Project Structure
 
 ```
 .
-├── backend/
-│   ├── Dockerfile          (Node.js 16-Alpine)
-│   ├── package.json
-│   └── src/
-│       ├── index.js
-│       └── routes/
 ├── frontend/
-│   ├── Dockerfile          (Node 18-Alpine → Nginx)
-│   ├── package.json
-│   └── src/
-│       ├── App.js
-│       └── components/
-├── nginx/
-│   └── default.conf        (Reverse proxy config)
-├── k8s/
-│   └── deployment.yaml     (Kubernetes manifests)
-├── docker-compose.yml      (Local development)
-└── .github/
-    └── workflows/
-        └── docker-build-push-advanced.yml
+│   ├── .env.production        ← Used by npm run build
+│   ├── .env.development       ← Used by npm start
+│   ├── .env.local            ← Local overrides (Git-ignored)
+│   ├── src/
+│   │   ├── config.js         ← API config (reads env vars)
+│   │   ├── components/
+│   │   │   └── FileUpload.js
+│   │   └── App.js
+│   └── package.json
+│
+├── backend/
+│   ├── .env.example          ← Template
+│   ├── .env                  ← Actual config (Git-ignored)
+│   ├── src/
+│   │   ├── index.js          ← Server + CORS
+│   │   ├── routes/files.js   ← API endpoints
+│   │   └── config.js         ← Azure SDK
+│   └── package.json
+│
+├── docker-compose.yml        ← Local dev
+├── web.config               ← Azure IISNode
+└── README.md               ← This file
 ```
 
-## CI/CD Pipeline
+---
 
-### Automated GitHub Actions Workflow
+## 📚 API Examples
 
-Triggers on push to `main` or `develop` branches:
-
-1. **Setup & Validate** - Validate Dockerfiles, generate build metadata
-2. **Build Backend** - Build Node.js backend image
-3. **Build Frontend** - Build React app with Nginx serving
-4. **Security Scan** - Run Trivy vulnerability scans
-5. **Build Summary** - Generate and report results
-
-### Docker Images
-
-**Backend**
-- Registry: `docker.io/756191/azure-g4-cicd-backend`
-- Base: `node:16-alpine`
-- Port: `5000`
-- Includes health checks
-
-**Frontend**
-- Registry: `docker.io/756191/azure-g4-cicd-frontend`
-- Build: `node:18-alpine` → Serve: `nginx:stable-alpine`
-- Port: `80`
-- Multi-stage optimized image
-
-### Image Tags
-
-Each build generates multiple tags:
-- `:latest` - Latest main branch build
-- `:main` - Current main branch
-- `:develop` - Current develop branch
-- `:COMMIT_SHA` - Specific commit version
-- `:DATE_TIME` - Build timestamp
-
-## Deployment
-
-### Docker Compose (Development)
-
+### Upload File
 ```bash
-docker-compose up -d
-docker-compose down
+curl -X POST https://file-manager-backend-app.azurewebsites.net/api/files/upload \
+  -F "file=@document.pdf" \
+  -F "userId=user123" \
+  -F "description=My document"
 ```
 
-### Kubernetes (Production)
-
+### List Files
 ```bash
-kubectl apply -f k8s/deployment.yaml
-kubectl get pods
-kubectl logs <pod-name>
+curl https://file-manager-backend-app.azurewebsites.net/api/files
 ```
 
-## Configuration
-
-### Environment Variables
-
-See `.env.example` for all available options:
-
-```env
-# Azure Cosmos DB
-COSMOS_ENDPOINT=https://<account>.documents.azure.com:443/
-COSMOS_KEY=<primary-key>
-
-# Azure Storage
-AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;...
-```
-
-### Docker Credentials
-
-GitHub Secrets configured:
-- `DOCKER_USERNAME` - Docker Hub username
-- `DOCKER_PASSWORD` - Docker Hub access token
-
-## Security
-
-- ✅ Multi-stage Docker builds (optimized size)
-- ✅ Alpine base images (reduced attack surface)
-- ✅ Trivy security scanning on all images
-- ✅ No secrets in images (using env vars)
-- ✅ Health checks on all containers
-- ✅ Layer caching with GitHub Actions
-
-## Monitoring & Logs
-
-### GitHub Actions
-- View workflow runs: GitHub Actions tab
-- Live logs: Click on workflow run
-- Artifacts: Build summary reports
-
-### Container Logs
-
+### Delete File
 ```bash
-# Docker Compose
-docker-compose logs -f backend
-docker-compose logs -f frontend
-
-# Kubernetes
-kubectl logs -f <pod-name>
-kubectl describe pod <pod-name>
+curl -X DELETE https://file-manager-backend-app.azurewebsites.net/api/files/{file-id}
 ```
 
-## Troubleshooting
+---
 
-### Build Failures
-1. Check GitHub Actions logs
-2. Verify Docker credentials in secrets
-3. Validate Dockerfile syntax
-4. Check resource limits
+## ✅ Final Verification Checklist
 
-### Image Not Pushing
-- Confirm Docker Hub credentials
-- Check network connectivity
-- Verify token hasn't expired
+- [ ] Frontend `.env.production` has correct REACT_APP_API_BASE_URL
+- [ ] Backend `.env` has all Azure credentials
+- [ ] Azure App Service environment variables set
+- [ ] CORS `corsOptions` includes production frontend URL
+- [ ] Backend `app.options()` middleware in place
+- [ ] Frontend runs: `npm start` works at localhost:3000
+- [ ] Backend runs: `npm start` works at localhost:5000
+- [ ] CORS test passes locally with 200 OK
+- [ ] Frontend builds: `npm run build` completes
+- [ ] Production URLs return 200 OK
+- [ ] File upload works end-to-end in production
 
-### Container Won't Start
-- Check environment variables
-- Review container logs
-- Verify port bindings
-- Check health check configuration
+---
 
-## Contributing
+## 💬 Support
 
-1. Create feature branch from `develop`
-2. Make changes and commit
-3. Push to GitHub (triggers CI/CD)
-4. Monitor Actions tab
-5. Merge to `main` when ready for production
-
-## License
-
-MIT
-
-## Support
-
-For issues or questions, check:
-- GitHub Actions logs
-- Container logs
-- Kubernetes events (if deployed to K8s)
+1. Check [Troubleshooting](#troubleshooting)
+2. Review: `az webapp log tail ...`
+3. Test locally first
+4. Verify all env vars set
