@@ -55,21 +55,36 @@ const app = express();
 
 // CORS Middleware - Allow requests from different origins
 // In production, restrict to specific domains
-app.use(
-  cors({
-    origin: [
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
       "http://localhost",
       "http://localhost:3000",
       "http://localhost:80",
+      "http://127.0.0.1:3000",
       "https://file-manager-frontend-app.azurewebsites.net",
-      "https://file-manager-frontend-app.azurewebsites.net/",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
-    optionsSuccessStatus: 200,
-  })
-);
+    ];
+
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"), false);
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  exposedHeaders: ["Content-Type", "Content-Length"],
+  maxAge: 3600,
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+
+// Explicit OPTIONS handler for preflight requests
+app.options("*", cors(corsOptions));
+app.options("/api/files/upload", cors(corsOptions));
 
 // Body Parser Middleware - Parse JSON requests
 app.use(express.json({ limit: "10mb" }));
