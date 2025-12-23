@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# DEPLOYMENT TRIGGER - Force Azure to redeploy latest code
+# This file is updated to trigger a new deployment
+# Generated: 2025-12-23 - File Upload Fix Complete
+
+echo "Deployment triggered with all fixes:"
+echo "✅ Form fields fixed (userId, description, tags)"
+echo "✅ userId auto-generation in App.js"
+echo "✅ Enhanced backend logging"
+echo "✅ Better error handling"
+echo "✅ Extended file type support"
+echo "✅ Production ready!"
