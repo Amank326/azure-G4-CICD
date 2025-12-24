@@ -25,15 +25,33 @@ const cosmosKey = process.env.COSMOS_KEY;
 const dbName = process.env.COSMOS_DB_NAME || "file-notes-db";
 const containerName = process.env.COSMOS_CONTAINER_NAME || "files";
 
-// Initialize Cosmos DB Client
-const cosmosClient = new CosmosClient({
-  endpoint: cosmosEndpoint,
-  key: cosmosKey,
-});
+// Initialize Cosmos DB Client (only if credentials are available)
+let cosmosClient, database, container;
 
-// Reference to database and container (don't create here, should exist)
-const database = cosmosClient.database(dbName);
-const container = database.container(containerName);
+if (cosmosEndpoint && cosmosKey) {
+  try {
+    cosmosClient = new CosmosClient({
+      endpoint: cosmosEndpoint,
+      key: cosmosKey,
+    });
+    // Reference to database and container (don't create here, should exist)
+    database = cosmosClient.database(dbName);
+    container = database.container(containerName);
+    console.log("✅ Cosmos DB client initialized");
+  } catch (err) {
+    console.warn("⚠️ Cosmos DB initialization error:", err.message);
+    cosmosClient = null;
+    database = null;
+    container = null;
+  }
+} else {
+  console.warn("⚠️ Cosmos DB credentials not found in environment variables");
+  console.warn("   COSMOS_ENDPOINT:", cosmosEndpoint ? "set" : "NOT SET");
+  console.warn("   COSMOS_KEY:", cosmosKey ? "set" : "NOT SET");
+  cosmosClient = null;
+  database = null;
+  container = null;
+}
 
 // ========================================
 // BLOB STORAGE CLIENT INITIALIZATION
@@ -42,13 +60,28 @@ const container = database.container(containerName);
 const blobConnectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const blobContainerName = process.env.CONTAINER_NAME || "files";
 
-// Initialize Blob Service Client
-const blobServiceClient = BlobServiceClient.fromConnectionString(
-  blobConnectionString
-);
+// Initialize Blob Service Client (only if credentials are available)
+let blobServiceClient, blobContainer;
 
-// Reference to blob container
-const blobContainer = blobServiceClient.getContainerClient(blobContainerName);
+if (blobConnectionString) {
+  try {
+    blobServiceClient = BlobServiceClient.fromConnectionString(
+      blobConnectionString
+    );
+    // Reference to blob container
+    blobContainer = blobServiceClient.getContainerClient(blobContainerName);
+    console.log("✅ Blob Storage client initialized");
+  } catch (err) {
+    console.warn("⚠️ Blob Storage initialization error:", err.message);
+    blobServiceClient = null;
+    blobContainer = null;
+  }
+} else {
+  console.warn("⚠️ Blob Storage connection string not found in environment variables");
+  console.warn("   AZURE_STORAGE_CONNECTION_STRING:", blobConnectionString ? "set" : "NOT SET");
+  blobServiceClient = null;
+  blobContainer = null;
+}
 
 // ========================================
 // VERIFY CONNECTIONS (Optional - for debugging)

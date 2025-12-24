@@ -53,6 +53,25 @@ router.post(
   asyncHandler(async (req, res) => {
     const startTime = Date.now();
     try {
+      // Check if Azure services are available
+      if (!blobContainer || !container) {
+        console.error("❌ [UPLOAD FAILED] Azure services not configured");
+        console.error("   blobContainer:", blobContainer ? "available" : "NOT AVAILABLE");
+        console.error("   cosmosDB container:", container ? "available" : "NOT AVAILABLE");
+        return res.status(503).json({
+          error: "Azure services not configured. Please check environment variables.",
+          details: {
+            blobStorage: blobContainer ? "connected" : "not connected",
+            cosmosDB: container ? "connected" : "not connected",
+            requiredEnv: {
+              COSMOS_ENDPOINT: "required",
+              COSMOS_KEY: "required",
+              AZURE_STORAGE_CONNECTION_STRING: "required",
+            }
+          }
+        });
+      }
+
       const { userId, description, tags } = req.body;
       const file = req.file;
 
