@@ -2,12 +2,16 @@
 
 Complete Docker & Azure deployment solution with automatic CI/CD pipeline, production-ready CORS configuration, and environment-based API routing.
 
+**Status:** ✅ Production Ready | **Last Updated:** December 24, 2025
+
 ## 📋 Table of Contents
 - [Quick Start](#quick-start)
 - [Production URLs](#production-urls)
+- [Testing & Verification](#testing--verification)
 - [Environment Configuration](#environment-configuration)
 - [Production Deployment](#production-deployment)
 - [CORS & Security](#cors--security)
+- [API Endpoints](#api-endpoints)
 - [Troubleshooting](#troubleshooting)
 - [Project Structure](#project-structure)
 
@@ -48,14 +52,84 @@ cd frontend && npm install && npm start
 | **Backend API** | https://file-manager-backend-app.azurewebsites.net |
 | **Health Check** | https://file-manager-backend-app.azurewebsites.net/health |
 
-### API Endpoints
+---
+
+## ✅ Testing & Verification
+
+### Quick Test (2 minutes)
+```bash
+# 1. Open website
+https://file-manager-frontend-app.azurewebsites.net
+
+# 2. Upload a test file
+Click "Choose File" → Select file → Click "Upload"
+
+# 3. Verify
+File should appear in the list below
+```
+
+### Full Verification Script
+```bash
+# Run comprehensive system check
+chmod +x verify.sh
+./verify.sh
+
+# Expected output: All checks passed ✅
+```
+
+### Test Individual Components
+
+```bash
+# Backend health check
+curl https://file-manager-backend-app.azurewebsites.net/health
+
+# CORS preflight test
+curl -X OPTIONS https://file-manager-backend-app.azurewebsites.net/api/files/upload \
+  -H "Origin: https://file-manager-frontend-app.azurewebsites.net" \
+  -v
+
+# Upload endpoint test (requires file)
+curl -X POST https://file-manager-backend-app.azurewebsites.net/api/files/upload \
+  -F "file=@testfile.txt"
+```
+
+---
+
+## 📊 API Endpoints
 
 ```
-POST /api/files/upload         - Upload file
-GET  /api/files                - List all files
-GET  /api/files/{id}           - Get file details
-DELETE /api/files/{id}         - Delete file
-GET  /health                   - Health check
+POST   /api/files/upload         - Upload file
+GET    /api/files                - List all files
+GET    /api/files/{id}           - Get file details
+DELETE /api/files/{id}           - Delete file
+GET    /health                   - Health check
+OPTIONS /api/files/upload        - CORS preflight
+```
+
+### Response Examples
+
+**Health Check:**
+```json
+{
+  "status": "healthy",
+  "service": "File Management API",
+  "timestamp": "2025-12-24T06:17:06.218Z",
+  "uptime": 125.748
+}
+```
+
+**File Upload:**
+```json
+{
+  "success": true,
+  "message": "File uploaded successfully",
+  "file": {
+    "id": "uuid-here",
+    "name": "document.pdf",
+    "size": 1024,
+    "url": "blob-storage-url"
+  }
+}
 ```
 
 ---
