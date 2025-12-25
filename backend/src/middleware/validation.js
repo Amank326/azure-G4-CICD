@@ -1,4 +1,4 @@
-/**
+6/**
  * Validation Middleware
  * 
  * Validates incoming requests:
@@ -74,6 +74,9 @@ function validateFileUpload(req, res, next) {
 
   // Log validation success
   console.log(`✅ [VALIDATION OK] file: ${req.file.originalname}, size: ${req.file.size}, type: ${req.file.mimetype}`);
+  
+  // Call next() to pass control to next middleware
+  next();
 }
 
 /**
