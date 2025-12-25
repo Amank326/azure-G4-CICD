@@ -86,13 +86,26 @@ router.post(
 
       console.log(`📝 [BLOB UPLOAD] blobName: ${blobName}`);
 
-      // Upload to Blob Storage
+      // Upload to Blob Storage with timeout protection
       const blockBlobClient = blobContainer.getBlockBlobClient(blobName);
-      await blockBlobClient.upload(file.buffer, file.size, {
-        blobHTTPHeaders: { blobContentType: file.mimetype },
-      });
-
-      console.log(`✅ [BLOB SUCCESS] blobUrl: ${blockBlobClient.url}`);
+      const blobStartTime = Date.now();
+      
+      try {
+        await Promise.race([
+          blockBlobClient.upload(file.buffer, file.size, {
+            blobHTTPHeaders: { blobContentType: file.mimetype },
+          }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Blob Storage upload timeout after 25 seconds")), 25000)
+          ),
+        ]);
+        const blobDuration = Date.now() - blobStartTime;
+        console.log(`✅ [BLOB SUCCESS] blobUrl: ${blockBlobClient.url}, duration: ${blobDuration}ms`);
+      } catch (blobError) {
+        const blobDuration = Date.now() - blobStartTime;
+        console.error(`❌ [BLOB UPLOAD FAILED] duration: ${blobDuration}ms, error: ${blobError.message}`);
+        throw new Error(`Blob Storage upload failed: ${blobError.message}`);
+      }
 
       // Create metadata document for Cosmos DB
       const fileMetadata = {
@@ -113,8 +126,22 @@ router.post(
 
       console.log(`📊 [COSMOS SAVE] fileId: ${fileId}`);
 
-      // Save metadata to Cosmos DB
-      await container.items.create(fileMetadata);
+      // Save metadata to Cosmos DB with timeout protection
+      const cosmosStartTime = Date.now();
+      try {
+        await Promise.race([
+          container.items.create(fileMetadata),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Cosmos DB save timeout after 25 seconds")), 25000)
+          ),
+        ]);
+        const cosmosDuration = Date.now() - cosmosStartTime;
+        console.log(`✅ [COSMOS SUCCESS] fileId: ${fileId}, duration: ${cosmosDuration}ms`);
+      } catch (cosmosError) {
+        const cosmosDuration = Date.now() - cosmosStartTime;
+        console.error(`❌ [COSMOS SAVE FAILED] duration: ${cosmosDuration}ms, error: ${cosmosError.message}`);
+        throw new Error(`Cosmos DB save failed: ${cosmosError.message}`);
+      }
 
       const duration = Date.now() - startTime;
       console.log(`✨ [UPLOAD SUCCESS] id: ${fileId}, duration: ${duration}ms`);
@@ -311,6 +338,39 @@ router.delete(
       throw error;
     }
   })
+);
+
+// ========================================
+// TEST ENDPOINTS (for debugging)
+// ========================================
+
+// Test upload - validates file but doesn't save to Azure
+router.post(
+  "/upload-test",
+  upload.single("file"),
+  validateFileMetadata,
+  validateFileUpload,
+  (req, res) => {
+    console.log(`📤 [TEST UPLOAD] Handler invoked!`);
+    console.log(`   File: ${req.file ? req.file.originalname : 'NONE'}`);
+    console.log(`   Size: ${req.file ? req.file.size : 'N/A'} bytes`);
+    
+    try {
+      const fileId = uuidv4();
+      res.status(200).json({
+        success: true,
+        message: "Test upload successful (file NOT saved to Azure)",
+        file: {
+          id: fileId,
+          fileName: req.file.originalname,
+          fileSize: req.file.size,
+          userId: req.body.userId,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 );
 
 // ========================================

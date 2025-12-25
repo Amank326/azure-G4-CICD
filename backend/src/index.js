@@ -153,6 +153,45 @@ app.get("/", (req, res) => {
   });
 });
 
+// Debug endpoint - Check Azure service configuration
+app.get("/debug", (req, res) => {
+  const { container, blobContainer } = require("./config");
+  
+  const cosmosConfigured = !!(
+    process.env.COSMOS_ENDPOINT &&
+    process.env.COSMOS_KEY &&
+    process.env.COSMOS_DB_NAME &&
+    process.env.COSMOS_CONTAINER_NAME
+  );
+  
+  const storageConfigured = !!process.env.AZURE_STORAGE_CONNECTION_STRING;
+  
+  res.status(200).json({
+    service: "Debug Information",
+    timestamp: new Date().toISOString(),
+    configuration: {
+      cosmosDB: {
+        configured: cosmosConfigured,
+        endpoint: process.env.COSMOS_ENDPOINT ? "SET" : "NOT SET",
+        key: process.env.COSMOS_KEY ? "SET" : "NOT SET",
+        database: process.env.COSMOS_DB_NAME || "NOT SET",
+        container: process.env.COSMOS_CONTAINER_NAME || "NOT SET",
+        connected: container ? "YES" : "NO",
+      },
+      blobStorage: {
+        configured: storageConfigured,
+        connectionString: process.env.AZURE_STORAGE_CONNECTION_STRING ? "SET" : "NOT SET",
+        containerName: process.env.CONTAINER_NAME || "NOT SET",
+        connected: blobContainer ? "YES" : "NO",
+      },
+    },
+    testEndpoints: {
+      testUpload: "POST /api/files/upload-test",
+      testUploadDescription: "Upload file without saving to Azure (tests validation middleware)",
+    },
+  });
+});
+
 // Mount file management routes
 // All routes will be prefixed with /api/files
 app.use("/api/files", filesRouter);
