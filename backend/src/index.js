@@ -24,6 +24,9 @@ const server = http.createServer((req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
   
+  // DEBUG: Log all requests
+  console.log(`\n[${new Date().toISOString()}] ${req.method} ${pathname}`);
+  
   // CORS Headers - Allow ALL
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
