@@ -70,7 +70,7 @@ console.log('   Node Environment:', process.env.NODE_ENV);
 const API_CONFIG = {
   BASE_URL: API_BASE_URL,
   ENDPOINTS: {
-    UPLOAD: `${API_BASE_URL}/api/files/upload`,
+    UPLOAD: `${API_BASE_URL}/api/files`,
     LIST: `${API_BASE_URL}/api/files`,
     GET: (id) => `${API_BASE_URL}/api/files/${id}`,
     DELETE: (id) => `${API_BASE_URL}/api/files/${id}`,
