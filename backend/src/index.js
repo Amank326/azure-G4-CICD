@@ -27,10 +27,25 @@ const server = http.createServer((req, res) => {
   // DEBUG: Log all requests
   console.log(`\n[${new Date().toISOString()}] ${req.method} ${pathname}`);
   
-  // CORS Headers - Allow ALL
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  // CORS Headers - Properly configured for Azure
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    "https://file-manager-frontend-app.azurewebsites.net",
+    "http://localhost:3000",
+    "http://localhost",
+    "http://127.0.0.1:3000"
+  ];
+  
+  // Echo back the origin if it's allowed, otherwise use the production frontend
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  } else {
+    res.setHeader("Access-Control-Allow-Origin", "https://file-manager-frontend-app.azurewebsites.net");
+  }
+  
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Content-Type", "application/json");
   
   // Handle CORS preflight
