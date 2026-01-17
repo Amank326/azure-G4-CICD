@@ -40,6 +40,39 @@ const FileUpload = ({ onUpload }) => {
         }
     };
 
+    // Retry logic with exponential backoff
+    const fetchWithRetry = async (url, options, maxRetries = 3) => {
+        let lastError;
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                console.log(`\n📤 Attempt ${attempt}/${maxRetries}...`);
+                
+                const fetchPromise = fetch(url, {
+                    ...options,
+                    signal: AbortSignal.timeout(15000), // 15 second timeout per attempt
+                });
+                
+                const response = await fetchPromise;
+                console.log(`✅ Response received: ${response.status} ${response.statusText}`);
+                return response;
+                
+            } catch (err) {
+                lastError = err;
+                console.warn(`⚠️  Attempt ${attempt} failed:`, err.message);
+                
+                if (attempt < maxRetries) {
+                    // Exponential backoff: 1s, 2s, 4s
+                    const delayMs = Math.pow(2, attempt - 1) * 1000;
+                    console.log(`⏳ Retrying in ${delayMs}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delayMs));
+                }
+            }
+        }
+        
+        throw lastError || new Error('Upload failed after all retry attempts');
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!file) {
@@ -76,18 +109,27 @@ const FileUpload = ({ onUpload }) => {
             console.log('🏷️  Tags: web-upload');
             console.log('═══════════════════════════════════════');
             
-            const response = await fetch(uploadUrl, {
+            // Check backend health before uploading
+            console.log('\n🔍 Checking backend health...');
+            try {
+                const healthUrl = API_CONFIG.ENDPOINTS.HEALTH;
+                const healthResponse = await fetch(healthUrl, {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(5000),
+                });
+                console.log('✅ Backend is healthy:', healthResponse.status);
+            } catch (healthErr) {
+                console.warn('⚠️  Backend health check failed:', healthErr.message);
+                setError('⚠️  Backend service is not responding. The backend might be temporarily unavailable. Please try again in a few moments.');
+            }
+            
+            const response = await fetchWithRetry(uploadUrl, {
                 method: 'POST',
                 body: formData,
-                // Note: No 'Content-Type' header needed - FormData sets it automatically
-                // Note: No credentials mode needed - Azure backend uses CORS, not cookie auth
                 headers: {
                     'Accept': 'application/json',
                 },
-                // Important: Do NOT set credentials: 'include' unless backend requires cookies
-                // Our backend uses stateless auth (no sessions), so we don't need credentials
-                // credentials: 'omit', // Explicitly omit credentials (default behavior)
-            });
+            }, 3);
 
             const endTime = performance.now();
             const duration = (endTime - startTime).toFixed(0);
@@ -129,8 +171,16 @@ const FileUpload = ({ onUpload }) => {
             console.error('   Message:', err.message);
             console.error('   Stack:', err.stack);
             console.error('   API URL:', API_CONFIG.ENDPOINTS.UPLOAD);
+            console.error('   Network Error?', err.message.includes('fetch'));
             console.error('═══════════════════════════════════════');
-            setError(err.message || 'An error occurred during upload.');
+            
+            // Provide helpful error messages
+            let errorMessage = err.message || 'An error occurred during upload.';
+            if (errorMessage.includes('Failed to fetch') || errorMessage.includes('TypeError')) {
+                errorMessage = '❌ Failed to connect to backend.\n\nPossible reasons:\n1. Backend service is not running\n2. Network connectivity issue\n3. URL is incorrect\n\nPlease check the browser console for more details.';
+            }
+            
+            setError(errorMessage);
         } finally {
             setUploading(false);
         }

@@ -41,6 +41,62 @@ router.get("/health", (req, res) => {
 });
 
 // ========================================
+// ENDPOINT 1B: GET /diagnostics
+// Purpose: Comprehensive system diagnostics
+// ========================================
+
+router.get("/diagnostics", (req, res) => {
+  try {
+    const diagnostics = {
+      status: "diagnostics",
+      service: "File Management API",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: {
+        NODE_ENV: process.env.NODE_ENV || "not set",
+        PORT: process.env.PORT || "not set",
+        COSMOS_ENDPOINT: process.env.COSMOS_ENDPOINT ? "✓" : "✗ MISSING",
+        COSMOS_KEY: process.env.COSMOS_KEY ? "✓" : "✗ MISSING",
+        AZURE_STORAGE_CONNECTION_STRING: process.env.AZURE_STORAGE_CONNECTION_STRING ? "✓" : "✗ MISSING",
+        CONTAINER_NAME: process.env.CONTAINER_NAME ? "✓" : "✗ MISSING",
+      },
+      azureServices: {
+        blobStorage: {
+          status: blobContainer ? "connected" : "not connected",
+          hasContainer: blobContainer ? true : false,
+        },
+        cosmosDB: {
+          status: container ? "connected" : "not connected",
+          hasContainer: container ? true : false,
+        }
+      },
+      cors: {
+        enabled: true,
+        allowedOrigins: [
+          "http://localhost",
+          "http://localhost:3000",
+          "http://localhost:80",
+          "http://127.0.0.1:3000",
+          "http://127.0.0.1:80",
+          "https://file-manager-frontend-app.azurewebsites.net",
+          "https://file-manager-frontend-app.azurewebsites.net/"
+        ]
+      }
+    };
+    
+    console.log("📊 Diagnostics requested - returning status");
+    res.status(200).json(diagnostics);
+  } catch (error) {
+    console.error("❌ Diagnostics endpoint error:", error.message);
+    res.status(500).json({
+      error: "Diagnostics error",
+      message: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined
+    });
+  }
+});
+
+// ========================================
 // ENDPOINT 2: POST /upload
 // Purpose: Upload file to Azure Blob + save metadata to Cosmos DB
 // ========================================
