@@ -61,8 +61,8 @@ const server = http.createServer((req, res) => {
       }
     }));
   } 
-  else if ((pathname === "/api/files/upload" || pathname === "/api/files") && req.method === "POST") {
-    // Handle file uploads (multipart/form-data)
+  else if ((pathname === "/api/files/upload") && req.method === "POST") {
+    // Handle file uploads at /api/files/upload
     let body = '';
     req.on('data', chunk => {
       body += chunk.toString();
@@ -72,7 +72,35 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify({
         success: true,
         fileId: "file-" + Date.now(),
-        message: "✅ File received successfully",
+        message: "✅ File received successfully at /api/files/upload",
+        details: {
+          timestamp: new Date().toISOString(),
+          size: body.length,
+          contentType: req.headers['content-type']
+        }
+      }));
+    });
+    req.on('error', (err) => {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        success: false,
+        error: err.message
+      }));
+    });
+    return;
+  }
+  else if ((pathname === "/api/files") && req.method === "POST") {
+    // Handle file uploads at /api/files
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        success: true,
+        fileId: "file-" + Date.now(),
+        message: "✅ File received successfully at /api/files",
         details: {
           timestamp: new Date().toISOString(),
           size: body.length,
