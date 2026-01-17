@@ -61,13 +61,33 @@ const server = http.createServer((req, res) => {
       }
     }));
   } 
-  else if (pathname === "/api/files" && req.method === "POST") {
-    res.writeHead(200);
-    res.end(JSON.stringify({
-      success: true,
-      fileId: "file-" + Date.now(),
-      message: "✅ File upload endpoint working"
-    }));
+  else if ((pathname === "/api/files/upload" || pathname === "/api/files") && req.method === "POST") {
+    // Handle file uploads (multipart/form-data)
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        success: true,
+        fileId: "file-" + Date.now(),
+        message: "✅ File received successfully",
+        details: {
+          timestamp: new Date().toISOString(),
+          size: body.length,
+          contentType: req.headers['content-type']
+        }
+      }));
+    });
+    req.on('error', (err) => {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        success: false,
+        error: err.message
+      }));
+    });
+    return;
   } 
   else if (pathname === "/api/files" && req.method === "GET") {
     res.writeHead(200);
@@ -85,7 +105,7 @@ const server = http.createServer((req, res) => {
       endpoints: {
         health: "/health",
         diagnostics: "/api/files/diagnostics",
-        uploadFile: "POST /api/files",
+        uploadFile: "POST /api/files/upload or POST /api/files",
         listFiles: "GET /api/files"
       }
     }));
